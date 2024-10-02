@@ -1,0 +1,86 @@
+#%%
+from class_multiressolver import *
+import matplotlib.pyplot as plt
+import torch.nn.functional as func
+import torch
+from ptychography import Ptychography2
+
+
+def run_test():
+    # Setting the operating device as cpu and the inital as ...
+
+    
+    scale = 9
+    I_in = [1, 15, 10, 5, 2, 5, 10, 30, 100]
+    #I_in = [10]
+    #I_out = [0, 0, 0, 0, 7, 7, 7, 5, 4]
+    I_out = np.array([0, 0, 0, 0,56,56,56,40,32])
+    #I_out = [10]
+    cycle = [0, -1, -1, -1, -1,1,  1, 1, 1]
+    #cycle = [0]
+    device = "cpu"
+    lmbda = 1e-4
+    LR = 1e-2
+    tol = [1e-8] * 9
+    tol_in = [1e-8] * 9
+
+
+    linOperator = Ptychography2(in_shape=(2**scale-1, 2**scale-1), n_img=16, probe_type='defocus pupil',
+                           probe_radius=200, defocus_factor=0, 
+                           fov=520, threshold=0.3, device='cpu')
+
+    image = plt.imread('images/peppers.jpg')[:511, :511] / 255
+    image_tensor = torch.tensor(image).double().to(device).view(1, 1, 511, 511)
+    image_tensor = torch.stack([image_tensor, image_tensor], dim=-1)
+    image_tensor = torch.view_as_complex(image_tensor).to(torch.complex64)
+
+   # torch.manual_seed(0)
+   # mask = torch.rand((1, 1, 2 ** scale - 1, 2 ** scale - 1), device=device, )
+   # mask[(mask < 0.8)], mask[(mask > 0.8)] = 0, 1
+
+    ##############
+    #img_width = image_tensor.shape[2]
+    #img_heigth = image_tensor.shape[3]
+    #mask = torch.rand((1, 1, img_width , img_heigth), device=device,)
+    #mask[(mask < 0.8)], mask[(mask > 0.8)] = 0, 1
+    ##############
+    mask = linOperator
+    
+    #Initiate the MultiRes class with the inital scale.
+    multires = MultiRes(scale, device)
+    loss = Loss(mask,linOperator.apply_linop(image_tensor), lmbda = lmbda)
+
+    model = MultiResSolver(multires, loss, LR = LR,
+                           I_in = I_in,
+                           I_out = I_out,
+                           tol = tol,
+                           tol_in = tol_in,
+                           cycle = cycle,
+                           l1_type = "l1_row")
+    
+    model.solve_multigrid()
+    model.print_time()
+    return model
+model = run_test()
+# %%
+
+image_real = torch.view_as_real(model.sols[-1])[0, 0, :, :, 0].to("cpu")
+image_imag = torch.view_as_real(model.sols[-1])[0, 0, :, :, 1].to("cpu")
+scale = 9
+image = plt.imread('images/peppers.jpg')[:511, :511] / 255
+image_tensor = torch.tensor(image).double().to('cpu').view(1, 1, 511, 511)
+image_tensor = torch.stack([image_tensor, image_tensor], dim=-1)
+image_tensor = torch.view_as_complex(image_tensor).to(torch.complex64)
+
+linOperator = Ptychography2(in_shape=(2**scale-1, 2**scale-1), n_img=16, probe_type='defocus pupil',
+                           probe_radius=25, defocus_factor=0, 
+                           fov=120, threshold=0.3, device='cpu')
+#b = np.absolute(linOperator.apply_linop((image_tensor))[0,0,:,:])
+#plt.imshow(b)
+#plt.show()
+#a = np.absolute(linOperator.apply_linop((model.sols[-1]))[0,0,:,:])
+plt.imshow(model.sols[-1][0,0,:,:].imag)
+plt.show()
+plt.imshow(model.loss.y[0, 0].real.to("cpu"))
+plt.show
+# %%
