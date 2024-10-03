@@ -13,14 +13,14 @@ def run_test():
     scale = 9
     I_in = [1, 15, 10, 5, 2, 5, 10, 30, 100]
     #I_in = [10]
-    #I_out = [0, 0, 0, 0, 7, 7, 7, 5, 4]
-    I_out = np.array([0, 0, 0, 0,56,56,56,40,32])
+    I_out = [0, 0, 0, 0, 7, 7, 7, 5, 4]
+    #I_out = np.array([0, 0, 0, 0,56,56,56,40,32])
     #I_out = [10]
     cycle = [0, -1, -1, -1, -1,1,  1, 1, 1]
     #cycle = [0]
     device = "cpu"
     lmbda = 1e-4
-    LR = 1e-2
+    LR = 1e-1
     tol = [1e-8] * 9
     tol_in = [1e-8] * 9
 
@@ -79,8 +79,14 @@ linOperator = Ptychography2(in_shape=(2**scale-1, 2**scale-1), n_img=16, probe_t
 #plt.imshow(b)
 #plt.show()
 #a = np.absolute(linOperator.apply_linop((model.sols[-1]))[0,0,:,:])
+plt.figure(figsize=(15, 5),dpi = 600)
+plt.subplot(1, 3, 1)
+plt.imshow(image_imag)
+plt.title("Original Image")
+plt.subplot(1, 3, 2)
 plt.imshow(model.sols[-1][0,0,:,:].imag)
-plt.show()
+plt.title("Reconstructed Image")
+plt.subplot(1, 3, 3)
 plt.imshow(model.loss.y[0, 0].real.to("cpu"))
-plt.show
+plt.title("Loss")
 # %%

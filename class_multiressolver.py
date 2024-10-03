@@ -45,11 +45,12 @@ class MultiResSolver():
 
 
         self.infos = lambda:  'Iter ' + str(self.measures["iters"][-1][-1]) + \
-                              ', [loss, mse, reg, rel_loss] : [' \
+                              ', [loss, mse, reg, rel_loss, LR] : [' \
                               + str(np.round(self.measures["loss"][-1][-1], 7)) + ", " \
                               + str(np.round(self.measures["mse"][-1][-1], 7))+ ", " \
                               + str(np.round(self.measures["reg"][-1][-1], 7)) + ", " \
-                              + str(np.round(self.measures["rel_loss"][-1][-1], 7)) + "] "
+                              + str(np.round(self.measures["rel_loss"][-1][-1], 7)) + ", " \
+                              + str(self.LR) + "] "
 
 
     def up_measures(self, x1=None, x2=None):
@@ -84,6 +85,37 @@ class MultiResSolver():
 
     def solve_scale(self):
 
+        alpha_d = 0.7
+        alpha_u = 1.2
+
+        g, d_k =  self.loc["grid"], self.loc["d_k"]
+        F, reg, loss = self.loss.F, self.loss.reg, self.loss
+
+        t_k, c_kp1, c_k = 1, None, d_k
+        self.up_measures()
+        self.up_measures(c_k, c_kp1)
+        self.measures["time"].append(-time.time())
+        while self.measures["iters"][-1][-1] < self.cycle["I_out"][g] and self.measures["rel_loss"][-1][-1] > self.cycle["tol"][g]:
+            inner_prox = d_k + F.Ht(loss.y - F.H(d_k)) * (self.LR*self.multires.loc["sigma_U"] ** -2)
+            c_kp1 = reg.grad(y=inner_prox,
+                             iter_in=self.cycle["I_in"][g],
+                             lmbda=loss.lmbda,
+                             tau=self.multires.loc["sigma_U"] ** -2,
+                             toi=self.cycle["tol_in"][g])
+            
+            if (self.loss.calc_loss(c_k, l1_type= self.l1_type) < self.loss.calc_loss(c_kp1, l1_type= self.l1_type)):
+                self.LR = alpha_d*self.LR
+            else: 
+                self.LR = alpha_u*self.LR
+                self.up_measures(c_k, c_kp1)
+                c_k, d_k, t_k = fista_fast(t_k, c_kp1, c_k)
+                print(self.infos())
+
+
+        self.measures["time"][-1] += time.time()
+        self.sols[self.multires.loc["s"] - 1] = c_k
+
+    def solve_scale_v2(self):
         g, d_k =  self.loc["grid"], self.loc["d_k"]
         F, reg, loss = self.loss.F, self.loss.reg, self.loss
 

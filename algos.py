@@ -1,6 +1,6 @@
 import numpy as np
-from pyphaseretrieve.phaseretrieval import *
-from pyphaseretrieve.linop          import *
+from phaseretrieval import *
+from linop          import *
 
 
 class GradientDescent:
