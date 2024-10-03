@@ -17,7 +17,7 @@ device = "cpu"
 
 # Initialize forward operators
 ptycho_fwd = Ptychography2(in_shape=(size, size), n_img=n_img, probe_type='defocus pupil',
-                           probe_radius=100, defocus_factor=0, 
+                           probe_radius=150, defocus_factor=0, 
                            fov=520, threshold=0.3, device=device)
 
 # Plot probe

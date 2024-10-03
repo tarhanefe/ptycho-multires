@@ -1,7 +1,7 @@
 #%%
 import torch 
 import numpy as np
-from ptycography.ptychography import Ptychography, Ptychography2
+from ptychography import Ptychography, Ptychography2
 
 n = 128
 x = torch.randn(1,1,n,n)
