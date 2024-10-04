@@ -8,16 +8,11 @@ from ptycho.tools.ptychography import Ptychography2
 
 def run_test():
     # Setting the operating device as cpu and the inital as ...
-
     
     scale = 9
     I_in = [1, 15, 10, 5, 2, 5, 10, 30, 100]
-    #I_in = [10]
     I_out = [0, 0, 0, 0, 7, 7, 7, 5, 4]
-    #I_out = np.array([0, 0, 0, 0,56,56,56,40,32])
-    #I_out = [10]
     cycle = [0, -1, -1, -1, -1,1,  1, 1, 1]
-    #cycle = [0]
     device = "cpu"
     lmbda = 1e-4
     LR = 1e-1
