@@ -100,7 +100,7 @@ class MultiResSolver():
             c_kp1 = reg.grad(y=inner_prox,
                              iter_in=self.cycle["I_in"][g],
                              lmbda=loss.lmbda,
-                             tau=self.multires.loc["sigma_U"] ** -2,
+                             tau = self.LR * self.multires.loc["sigma_U"] ** -2,
                              toi=self.cycle["tol_in"][g])
             
             if (self.loss.calc_loss(c_k, l1_type= self.l1_type) < self.loss.calc_loss(c_kp1, l1_type= self.l1_type)):
