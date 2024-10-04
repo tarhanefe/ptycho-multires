@@ -1,5 +1,5 @@
-from utils import *
-from class_multires import *
+from ptycho.tools.utils import *
+from ptycho.multires.class_multires import *
 import torch.nn.functional as func
 
 class ForwardInterpolation(MultiRes):

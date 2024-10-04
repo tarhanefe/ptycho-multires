@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from linop_base import BaseLinOp
+from ptycho.tools.linop_base import BaseLinOp
 
 ## 1D classes
 class LinOpMatrix(BaseLinOp):

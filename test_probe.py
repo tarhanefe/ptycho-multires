@@ -3,10 +3,10 @@ import torch
 from matplotlib import pyplot as plt
 from time import time
 
-from ptychography import Ptychography2
-from u_electron_microscopy import initialize_physical_params, get_proj, get_ring_average
-from fisher_information import compute_fi, hartley_transform_fim
-from u_ptychography import get_overlap_img
+from ptycho.tools.ptychography import Ptychography2
+from ptycho.tools.u_electron_microscopy import initialize_physical_params, get_proj, get_ring_average
+from ptycho.tools.fisher_information import compute_fi, hartley_transform_fim
+from ptycho.tools.u_ptychography import get_overlap_img
 
 # Initialize object
 size = 511

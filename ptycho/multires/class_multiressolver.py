@@ -4,11 +4,11 @@ from matplotlib import pyplot as plt
 import numpy as np
 import time
 
-from class_htv import *
-from class_multires import *
-from class_interpolation import *
-from class_loss import *
-from utils import *
+from ptycho.multires.class_htv import *
+from ptycho.multires.class_multires import *
+from ptycho.multires.class_interpolation import *
+from ptycho.multires.class_loss import *
+from ptycho.tools.utils import *
 
 
 # 0: stay on the same level 

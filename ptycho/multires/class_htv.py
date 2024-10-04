@@ -1,8 +1,8 @@
 import torch
 import torch.nn.functional as F
 import numpy as np
-from utils import *
-from class_multires import *
+from ptycho.tools.utils import *
+from ptycho.multires.class_multires import *
 
 class HTV(MultiRes):
 
