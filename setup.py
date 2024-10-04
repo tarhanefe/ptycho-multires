@@ -10,7 +10,7 @@ setup(
     description='A Python library for ptychography and related algorithms',
     #long_description=open('README.md').read(),  # Include a README if you have one
     long_description_content_type='text/markdown',
-    url='https://github.com/tarhanefe/epfl_semetr_project/ptycho',
+    url='https://github.com/tarhanefe/https://github.com/tarhanefe/Multiresolution-Framework-for-Fourier-Ptychography/ptycho',
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
