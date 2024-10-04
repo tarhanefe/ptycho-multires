@@ -33,22 +33,10 @@ def run_test():
     image_tensor = torch.tensor(image).double().to(device).view(1, 1, 511, 511)
     image_tensor = torch.stack([image_tensor, image_tensor], dim=-1)
     image_tensor = torch.view_as_complex(image_tensor).to(torch.complex64)
-
-   # torch.manual_seed(0)
-   # mask = torch.rand((1, 1, 2 ** scale - 1, 2 ** scale - 1), device=device, )
-   # mask[(mask < 0.8)], mask[(mask > 0.8)] = 0, 1
-
-    ##############
-    #img_width = image_tensor.shape[2]
-    #img_heigth = image_tensor.shape[3]
-    #mask = torch.rand((1, 1, img_width , img_heigth), device=device,)
-    #mask[(mask < 0.8)], mask[(mask > 0.8)] = 0, 1
-    ##############
-    mask = linOperator
     
     #Initiate the MultiRes class with the inital scale.
     multires = MultiRes(scale, device)
-    loss = Loss(mask,linOperator.apply_linop(image_tensor), lmbda = lmbda)
+    loss = Loss(linOperator,linOperator.apply_linop(image_tensor), lmbda = lmbda)
 
     model = MultiResSolver(multires, loss, LR = LR,
                            I_in = I_in,
@@ -89,4 +77,5 @@ plt.title("Reconstructed Image")
 plt.subplot(1, 3, 3)
 plt.imshow(model.loss.y[0, 0].real.to("cpu"))
 plt.title("Loss")
+plt.colorbar()
 # %%

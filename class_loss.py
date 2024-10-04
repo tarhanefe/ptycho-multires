@@ -5,7 +5,7 @@ from class_interpolation import *
 
 class Loss():
 
-    def __init__(self, mask, y, lmbda=1e-6):
+    def __init__(self, linOperator, y, lmbda=1e-6):
         '''
         Sets the scaling factor and the input image. Creates the 
         necessary classes for the forward interpolation and the HTV.
@@ -15,7 +15,7 @@ class Loss():
         self.lmbda = lmbda
 
         #classes
-        self.F = ForwardInterpolation(mask)
+        self.F = ForwardInterpolation(linOperator)
         self.reg = HTV()
 
     def calc_mse(self, x):
