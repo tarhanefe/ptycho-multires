@@ -10,14 +10,14 @@ from ptycho.tools.u_ptychography import get_overlap_img
 
 # Initialize object
 size = 511
-n_img = 4*4
+n_img = 10*10
 param = initialize_physical_params(shape=size, pix_size=1)
 x = get_proj(param).unsqueeze(0).unsqueeze(0)
 device = "cpu"
 
 # Initialize forward operators
 ptycho_fwd = Ptychography2(in_shape=(size, size), n_img=n_img, probe_type='defocus pupil',
-                           probe_radius=150, defocus_factor=0, 
+                           probe_radius=80, defocus_factor=0, 
                            fov=520, threshold=0.3, device=device)
 
 # Plot probe
