@@ -103,7 +103,7 @@ class MultiResSolver():
                              tau = self.LR * self.multires.loc["sigma_U"] ** -2,
                              toi=self.cycle["tol_in"][g])
             
-            if (self.loss.calc_loss(c_k, l1_type= self.l1_type) < self.loss.calc_loss(c_kp1, l1_type= self.l1_type)):
+            if (self.loss.calc_loss(c_k, l1_type= self.l1_type) < 0.9*self.loss.calc_loss(c_kp1, l1_type= self.l1_type)):
                 self.LR = alpha_d*self.LR
             else: 
                 self.LR = alpha_u*self.LR
