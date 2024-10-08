@@ -6,7 +6,7 @@ from ptycho.tools.utils import *
 
 class MultiRes():
 
-    device = "cpu"
+    device = "cuda"
     # The filter is the structure of the simplex.
     '''
     [0 0.5 0.5

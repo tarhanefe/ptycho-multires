@@ -3,7 +3,7 @@ import numpy as np
 from scipy.io import loadmat
 from scipy.ndimage import gaussian_filter
 
-def initialize_physical_params(shape=101, pix_size=1, device="cpu", perfect=False):
+def initialize_physical_params(shape=101, pix_size=1, device="cuda", perfect=False):
     param = lambda : None
 
     # Camera parameters
@@ -92,7 +92,7 @@ def crop(input_img, shape):
         # print("Warning: input image is smaller than the desired size.")
     return input_img
 
-def get_ctf(param=None, device="cpu", perfect=False):
+def get_ctf(param=None, device="cuda", perfect=False):
     if param is None:
         param = initialize_physical_params(device=device, perfect=perfect)
     else:

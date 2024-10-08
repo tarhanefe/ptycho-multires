@@ -6,7 +6,7 @@ from ptycho.tools.linop import LinOpFFT2
 
 
 class zernike(FourierFilterPR2):
-    def __init__(self, zernike_mask_radius=5, fov_radius=None, param=None, device="cpu"):
+    def __init__(self, zernike_mask_radius=5, fov_radius=None, param=None, device="cuda"):
         fourier_filter = torch.ones(param.shape, param.shape, dtype=torch.complex64).to(device)
         center = param.shape // 2
         x = np.linspace(0, param.shape-1, param.shape)
@@ -32,13 +32,13 @@ class zernike(FourierFilterPR2):
         self.device = device
 
 class ctf_forward(FourierFilterPR2):
-    def __init__(self, param=None, perfect=False, device="cpu"):
+    def __init__(self, param=None, perfect=False, device="cuda"):
         ctf_filter = get_ctf(param=param, device=device, perfect=perfect)
         self.fourier_filter = ctf_filter.to(device)
         super().__init__(fourier_filter=self.fourier_filter)
 
 class fourier_forward(PhaseRetrievalBase):
-    def __init__(self, param=None, device="cpu"):
+    def __init__(self, param=None, device="cuda"):
         self.linop = LinOpFFT2()
         envelope = get_envelope(param=param, spatial_incoherence=False, temporal_incoherence=True).to(device)
         self.linop = envelope * self.linop

@@ -13,7 +13,7 @@ def run_test():
     I_in = [1, 15, 10, 5, 2, 5, 10, 30, 100]
     I_out = [0, 0, 0, 0, 7, 7, 7, 5, 4]
     cycle = [0, -1, -1, -1, -1,1,  1, 1, 1]
-    device = "cpu"
+    device = "cuda"
     lmbda = 1e-4
     LR = 1e-1
     tol = [1e-8] * 9
@@ -22,7 +22,7 @@ def run_test():
 
     linOperator = Ptychography2(in_shape=(2**scale-1, 2**scale-1), n_img=16, probe_type='defocus pupil',
                            probe_radius=200, defocus_factor=0, 
-                           fov=520, threshold=0.3, device='cpu')
+                           fov=520, threshold=0.3, device=device)
 
     image = plt.imread('images/peppers.jpg')[:511, :511] / 255
     image_tensor = torch.tensor(image).double().to(device).view(1, 1, 511, 511)
@@ -46,31 +46,31 @@ def run_test():
     return model
 model = run_test()
 # %%
-
-image_real = torch.view_as_real(model.sols[-1])[0, 0, :, :, 0].to("cpu")
-image_imag = torch.view_as_real(model.sols[-1])[0, 0, :, :, 1].to("cpu")
+device = 'cuda'
+image_real = torch.view_as_real(model.sols[-1])[0, 0, :, :, 0].to(device)
+image_imag = torch.view_as_real(model.sols[-1])[0, 0, :, :, 1].to(device)
 scale = 9
 image = plt.imread('images/peppers.jpg')[:511, :511] / 255
-image_tensor = torch.tensor(image).double().to('cpu').view(1, 1, 511, 511)
+image_tensor = torch.tensor(image).double().to(device).view(1, 1, 511, 511)
 image_tensor = torch.stack([image_tensor, image_tensor], dim=-1)
 image_tensor = torch.view_as_complex(image_tensor).to(torch.complex64)
 
 linOperator = Ptychography2(in_shape=(2**scale-1, 2**scale-1), n_img=16, probe_type='defocus pupil',
                            probe_radius=25, defocus_factor=0, 
-                           fov=120, threshold=0.3, device='cpu')
+                           fov=120, threshold=0.3, device=device)
 #b = np.absolute(linOperator.apply_linop((image_tensor))[0,0,:,:])
 #plt.imshow(b)
 #plt.show()
 #a = np.absolute(linOperator.apply_linop((model.sols[-1]))[0,0,:,:])
 plt.figure(figsize=(15, 5),dpi = 600)
 plt.subplot(1, 3, 1)
-plt.imshow(image_imag)
+plt.imshow(image_imag.to('cpu'))
 plt.title("Original Image")
 plt.subplot(1, 3, 2)
-plt.imshow(model.sols[-1][0,0,:,:].imag)
+plt.imshow(model.sols[-1][0,0,:,:].imag.to('cpu'))
 plt.title("Reconstructed Image")
 plt.subplot(1, 3, 3)
-plt.imshow(model.loss.y[0, 0].real.to("cpu"))
+plt.imshow(model.loss.y[0, 0].real.to('cpu'))
 plt.title("Loss")
 plt.colorbar()
 # %%

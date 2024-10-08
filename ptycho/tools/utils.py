@@ -60,9 +60,9 @@ def get_device(array):
     '''
 
     if torch.get_device(array) == -1:
-        return "cpu"
+        return "cuda"
     elif torch.get_device(array) == 0:
-        return "gpu"
+        return "cuda"
 
 def fista_fast(t_k, c_kp1, c_k):
     '''

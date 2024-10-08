@@ -9,7 +9,7 @@ from ptycho.tools.u_czt import custom_fft2
 
 class Ptychography(PhaseRetrievalBase):
     def __init__(self, in_shape=100, probe=None, shifts=None, n_img:int=10, 
-                 threshold=0.1, device="cpu"):
+                 threshold=0.1, device="cuda"):
         self.in_shape = in_shape
         self.device = device
         if probe is not None:
@@ -44,7 +44,7 @@ class Ptychography(PhaseRetrievalBase):
 class Ptychography2(PhaseRetrievalBase):
     def __init__(self, in_shape=None, probe=None, shifts=None, 
                  probe_type=None, probe_radius=None, defocus_factor=0.5,  # probe parameters
-                 fov=None, threshold=0.1, n_img:int=25, device="cpu"):
+                 fov=None, threshold=0.1, n_img:int=25, device="cuda"):
         self.device = device
         if probe is not None:
             self.probe = probe
