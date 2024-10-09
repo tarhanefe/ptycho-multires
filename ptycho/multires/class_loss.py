@@ -23,7 +23,7 @@ class Loss():
         Calculates the mean squared error between the input image and the
         forward interpolation of the solution.
         '''
-        return ((torch.abs(self.y - self.F.H(x)) ** 2).sum() / 2).item()
+        return ((torch.abs(self.y - self.F.H_power(x))**2).sum() / 2).item()
 
     def calc_reg(self, x,l1_type = 'l1_row'):
         '''

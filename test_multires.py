@@ -10,18 +10,18 @@ def run_test():
     # Setting the operating device as cpu and the inital as ...
     
     scale = 9
-    I_in = [1, 15, 10, 5, 2, 5, 10, 30, 100]
-    I_out = [0, 0, 0, 0, 7, 7, 7, 5, 4]
+    I_in = 2*np.array([1, 15, 10, 5, 2, 5, 10, 30, 100])
+    I_out = 10*np.array([0, 0, 0, 0, 7, 7, 7, 5, 4])
     cycle = [0, -1, -1, -1, -1,1,  1, 1, 1]
     device = "cuda"
     lmbda = 1e-4
     LR = 1e-1
-    tol = [1e-8] * 9
-    tol_in = [1e-8] * 9
+    tol = [1e-10] * 9
+    tol_in = [1e-10] * 9
 
 
-    linOperator = Ptychography2(in_shape=(2**scale-1, 2**scale-1), n_img=16, probe_type='defocus pupil',
-                           probe_radius=200, defocus_factor=0, 
+    linOperator = Ptychography2(in_shape=(2**scale-1, 2**scale-1), n_img=100, probe_type='defocus pupil',
+                           probe_radius=80, defocus_factor=0, 
                            fov=520, threshold=0.3, device=device)
 
     image = plt.imread('images/peppers.jpg')[:511, :511] / 255
@@ -31,7 +31,7 @@ def run_test():
     
     #Initiate the MultiRes class with the inital scale.
     multires = MultiRes(scale, device)
-    loss = Loss(linOperator,linOperator.apply_linop(image_tensor), lmbda = lmbda)
+    loss = Loss(linOperator,linOperator.apply(image_tensor), lmbda = lmbda)
 
     model = MultiResSolver(multires, loss, LR = LR,
                            I_in = I_in,
@@ -64,10 +64,10 @@ linOperator = Ptychography2(in_shape=(2**scale-1, 2**scale-1), n_img=16, probe_t
 #a = np.absolute(linOperator.apply_linop((model.sols[-1]))[0,0,:,:])
 plt.figure(figsize=(15, 5),dpi = 600)
 plt.subplot(1, 3, 1)
-plt.imshow(image_imag.to('cpu'))
+plt.imshow(image)
 plt.title("Original Image")
 plt.subplot(1, 3, 2)
-plt.imshow(model.sols[-1][0,0,:,:].imag.to('cpu'))
+plt.imshow(model.sols[-1][0,0,:,:].real.to('cpu'))
 plt.title("Reconstructed Image")
 plt.subplot(1, 3, 3)
 plt.imshow(model.loss.y[0, 0].real.to('cpu'))

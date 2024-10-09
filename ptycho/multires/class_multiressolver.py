@@ -81,12 +81,48 @@ class MultiResSolver():
 
         print("Times: ", self.measures["time"])
         print("Total time: ", tot)
-
+    
+    def calc_grad(self,x):
+        Ax = self.loss.F.H(x)
+        residual = (self.loss.y - self.loss.F.H_power(x))
+        Ax_residual = Ax*residual
+        return self.loss.F.Ht(Ax_residual)
 
     def solve_scale(self):
+        alpha_d = 0.8
+        alpha_u = 1
+
+        g, d_k =  self.loc["grid"], self.loc["d_k"]
+        F, reg, loss = self.loss.F, self.loss.reg, self.loss
+
+        t_k, c_kp1, c_k = 1, None, d_k
+        self.up_measures()
+        self.up_measures(c_k, c_kp1)
+        self.measures["time"].append(-time.time())
+        while self.measures["iters"][-1][-1] < self.cycle["I_out"][g] and self.measures["rel_loss"][-1][-1] > self.cycle["tol"][g]:
+            inner_prox = d_k + self.calc_grad(d_k) * (self.LR*self.multires.loc["sigma_U"] ** -2)
+            c_kp1 = reg.grad(y=inner_prox,
+                             iter_in=self.cycle["I_in"][g],
+                             lmbda=loss.lmbda,
+                             tau = self.LR * self.multires.loc["sigma_U"] ** -2,
+                             toi=self.cycle["tol_in"][g])
+            
+            if (self.loss.calc_loss(c_k, l1_type= self.l1_type) < 0.9*self.loss.calc_loss(c_kp1, l1_type= self.l1_type)):
+                self.LR = alpha_d*self.LR
+            else: 
+                self.LR = alpha_u*self.LR
+                self.up_measures(c_k, c_kp1)
+                c_k, d_k, t_k = fista_fast(t_k, c_kp1, c_k)
+                print(self.infos())
+
+
+        self.measures["time"][-1] += time.time()
+        self.sols[self.multires.loc["s"] - 1] = c_k
+
+    def solve_scale_v2(self):
 
         alpha_d = 0.7
-        alpha_u = 1.2
+        alpha_u = 1.01
 
         g, d_k =  self.loc["grid"], self.loc["d_k"]
         F, reg, loss = self.loss.F, self.loss.reg, self.loss
@@ -115,7 +151,7 @@ class MultiResSolver():
         self.measures["time"][-1] += time.time()
         self.sols[self.multires.loc["s"] - 1] = c_k
 
-    def solve_scale_v2(self):
+    def solve_scale_v3(self):
         g, d_k =  self.loc["grid"], self.loc["d_k"]
         F, reg, loss = self.loss.F, self.loss.reg, self.loss
 
@@ -155,7 +191,7 @@ class MultiResSolver():
             s, size = multires.loc["s"], 2 ** multires.loc["s"]
 
             self.loc["grid"] = grid
-            self.loc["d_k"] = torch.zeros((1, 1, size - 1, size - 1)).double().to(F.device)
+            self.loc["d_k"] = torch.randn((1, 1, size - 1, size - 1)).double().to(F.device)
 
             #stay on the same scale
             if self.cycle["cycle"][grid] == 0 and type(self.sols[s - 1]) == torch.Tensor:
