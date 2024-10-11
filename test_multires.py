@@ -11,7 +11,8 @@ def run_test():
     
     scale = 9
     I_in = 2*np.array([1, 15, 10, 5, 2, 5, 10, 30, 100])
-    I_out = 10*np.array([0, 0, 0, 0, 7, 7, 7, 5, 4])
+    I_out = 20*np.array([0, 0, 0, 0, 7, 7, 7, 5, 4])
+    #I_out = 10*np.array([0, 0, 0, 0, 7, 0, 0, 0, 0])
     cycle = [0, -1, -1, -1, -1,1,  1, 1, 1]
     device = "cuda"
     lmbda = 1e-4
@@ -44,33 +45,27 @@ def run_test():
     model.solve_multigrid()
     model.print_time()
     return model
-model = run_test()
-# %%
-device = 'cuda'
-image_real = torch.view_as_real(model.sols[-1])[0, 0, :, :, 0].to(device)
-image_imag = torch.view_as_real(model.sols[-1])[0, 0, :, :, 1].to(device)
-scale = 9
-image = plt.imread('images/peppers.jpg')[:511, :511] / 255
-image_tensor = torch.tensor(image).double().to(device).view(1, 1, 511, 511)
-image_tensor = torch.stack([image_tensor, image_tensor], dim=-1)
-image_tensor = torch.view_as_complex(image_tensor).to(torch.complex64)
 
-linOperator = Ptychography2(in_shape=(2**scale-1, 2**scale-1), n_img=16, probe_type='defocus pupil',
-                           probe_radius=25, defocus_factor=0, 
-                           fov=120, threshold=0.3, device=device)
-#b = np.absolute(linOperator.apply_linop((image_tensor))[0,0,:,:])
-#plt.imshow(b)
-#plt.show()
-#a = np.absolute(linOperator.apply_linop((model.sols[-1]))[0,0,:,:])
-plt.figure(figsize=(15, 5),dpi = 600)
-plt.subplot(1, 3, 1)
-plt.imshow(image)
-plt.title("Original Image")
-plt.subplot(1, 3, 2)
-plt.imshow(model.sols[-1][0,0,:,:].real.to('cpu'))
-plt.title("Reconstructed Image")
-plt.subplot(1, 3, 3)
-plt.imshow(model.loss.y[0, 0].real.to('cpu'))
-plt.title("Loss")
-plt.colorbar()
+def plot_results(model,image):
+    plt.figure(figsize=(15, 5),dpi = 600)
+    plt.subplot(1, 3, 1)
+    plt.imshow(image)
+    plt.title("Original Image")
+    plt.colorbar()
+    plt.subplot(1, 3, 2)
+    plt.imshow(model.sols[-1][0,0,:,:].real.to('cpu'))
+    plt.title("Reconstructed Image")
+    plt.colorbar()
+    plt.subplot(1, 3, 3)
+    plt.imshow(model.loss.y[0, 0].real.to('cpu'))
+    plt.title("Loss")
+    plt.colorbar()
+    return None 
+# %%
+image = plt.imread('images/peppers.jpg')[:511, :511] / 255
+model = run_test()
+
+# %%
+plot_results(model,image)
+
 # %%
