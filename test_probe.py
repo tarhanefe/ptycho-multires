@@ -13,12 +13,12 @@ size = 511
 n_img = 10*10
 param = initialize_physical_params(shape=size, pix_size=1)
 x = get_proj(param).unsqueeze(0).unsqueeze(0)
-device = "cuda"
+device = "cpu"
 
 # Initialize forward operators
-ptycho_fwd = Ptychography2(in_shape=(size, size), n_img=n_img, probe_type='defocus pupil',
+ptycho_fwd = Ptychography2(in_shape=(size, size), n_img=n_img, probe_type='disk',
                            probe_radius=80, defocus_factor=0, 
-                           fov=520, threshold=0.3, device=device)
+                           fov=680, threshold=0.3, device=device)
 
 # Plot probe
 probe = ptycho_fwd.probe

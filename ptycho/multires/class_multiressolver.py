@@ -87,6 +87,7 @@ class MultiResSolver():
         residual = (self.loss.y - self.loss.F.H_power(x))
         Ax_residual = Ax*residual
         return self.loss.F.Ht(Ax_residual)
+        # A.T(Ax * (y - |Ax|^2))
 
     def solve_scale(self):
         alpha_d = 0.8
@@ -179,7 +180,7 @@ class MultiResSolver():
         self.sols[self.multires.loc["s"] - 1] = c_k
 
 
-    def solve_multigrid(self):
+    def solve_multigrid(self,x0):
         #implements exact residual-based multigrid
 
         F, reg, multires = self.loss.F, self.loss.reg, self.multires
@@ -191,14 +192,18 @@ class MultiResSolver():
             s, size = multires.loc["s"], 2 ** multires.loc["s"]
 
             self.loc["grid"] = grid
-            self.loc["d_k"] = torch.randn((1, 1, size - 1, size - 1)).double().to(F.device)
+            self.loc['d_k'] = torch.randn((1, 1, size - 1, size - 1)).double().to(F.device)/10
+            #if s != 9:
+            #    self.loc['d_k'] = torch.randn((1, 1, size - 1, size - 1)).double().to(F.device)
+            #else: 
+            #    self.loc["d_k"] =  x0 + torch.randn((1, 1, size - 1, size - 1)).double().to(F.device)
 
             #stay on the same scale
             if self.cycle["cycle"][grid] == 0 and type(self.sols[s - 1]) == torch.Tensor:
                 self.loc["d_k"] = self.sols[s - 1]
 
             #goes on a finer scale
-            elif self.cycle["cycle"][grid] == 1:
+            elif self.cycle["cycle"][grid] == 1 and s != 9:
                 self.loc["d_k"] = F.up(self.sols[s - 2])
 
             print('----------- s = ' + str(multires.loc["s"]) + ' -----------' )

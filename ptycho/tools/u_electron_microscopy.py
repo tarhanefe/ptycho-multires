@@ -57,7 +57,7 @@ def get_proj(param=None, sigma=1):
         param = initialize_physical_params()
     shape = param.shape
     pix_size = param.pix_size
-    data = loadmat("potential.mat")
+    data = loadmat("ptycho/tools/potential.mat")
     phase = data["output"]
     orig_pix_size = 0.25
 
