@@ -9,24 +9,24 @@ from ptycho.tools.ptychography import Ptychography2
 def run_test():
     # Setting the operating device as cpu and the inital as ...
     
-    scale = 9
-    I_in = 2*np.array([1, 15, 10, 5, 2, 5, 10, 30, 100])
-    #I_out = 20*np.array([0, 0, 0, 0, 7, 7, 7, 5, 4])
-    I_out = 10*np.array([0, 0, 0, 0, 0, 0, 0, 0, 10])
+    scale = 7
+    I_in = 15*np.array([1, 15, 10, 5, 2, 5, 10, 30, 100])
+    I_out = 80*np.array([0, 0, 0, 0, 7, 7, 7, 5, 15])
+    #I_out = 40*np.array([0, 0, 0, 0, 0, 0, 0, 0, 10])
     cycle = [0, -1, -1, -1, -1,1,  1, 1, 1]
     device = "cuda"
     lmbda = 1e-10
-    LR = 1
+    LR = 0.1
     tol = [1e-10] * 9
     tol_in = [1e-10] * 9
+    img_count = 10*10
 
+    linOperator = Ptychography2(in_shape=(2**scale-1, 2**scale-1), n_img=img_count, probe_type='defocus pupil',
+                           probe_radius=20, defocus_factor=0, 
+                           fov=170, threshold=0.3, device=device)
 
-    linOperator = Ptychography2(in_shape=(2**scale-1, 2**scale-1), n_img=100, probe_type='disk',
-                           probe_radius=80, defocus_factor=0, 
-                           fov=680, threshold=0.3, device=device)
-
-    image = plt.imread('images/peppers.jpg')[:511, :511] / 255
-    image_tensor = torch.tensor(image).double().to(device).view(1, 1, 511, 511)
+    image = plt.imread('images/peppers_reduced.jpg')[:2**scale-1, :2**scale-1] / 255
+    image_tensor = torch.tensor(image).double().to(device).view(1, 1, 2**scale-1, 2**scale-1)
     image_tensor_ = torch.exp(1j * image_tensor)
     #image_tensor_ = torch.stack([image_tensor, image_tensor], dim=-1)
     #image_tensor_ = torch.view_as_complex(image_tensor_).to(torch.complex64)
@@ -43,7 +43,7 @@ def run_test():
                            cycle = cycle,
                            l1_type = "l1_row")
     
-    model.solve_multigrid(image_tensor_)
+    model.solve_multigrid()
     model.print_time()
     return model
 
@@ -54,7 +54,12 @@ def plot_results(model,image):
     plt.title("Original Image")
     plt.colorbar()
     plt.subplot(1, 4, 2)
-    plt.imshow(np.angle(model.sols[-1][0,0,:,:].to('cpu')))
+    phase = torch.angle(model.sols[-1][0,0,:,:].to('cpu'))
+    # mean_phase = torch.angle(torch.mean(model.sols[-1][0,0,:,:].to('cpu')))
+    # std_phase = torch.std(model.sols[-1][0,0,:,:].to('cpu'))
+    # final_est = torch.exp(1j * (phase - mean_phase)/std_phase)
+    # phase = torch.angle(final_est)
+    plt.imshow(phase)
     plt.title("R-Phase")
     plt.colorbar()
     plt.subplot(1, 4, 3)
@@ -67,10 +72,47 @@ def plot_results(model,image):
     plt.colorbar()
     return None 
 # %%
-image = plt.imread('images/peppers.jpg')[:511, :511] / 255
+image = plt.imread('images/peppers_reduced.jpg')[:2**7-1, :2**7-1] / 255
 model = run_test()
 
 # %%
 plot_results(model,image)
 
+# %%
+def unwrap_2d(phase):
+    """
+    Unwraps a 2D phase array using NumPy's 1D unwrap function.
+    
+    Parameters:
+    phase (numpy array): The 2D phase array to be unwrapped.
+    
+    Returns:
+    unwrapped_phase (numpy array): The 2D unwrapped phase array.
+    """
+    # Unwrap along the first axis (rows)
+    unwrapped_phase = np.unwrap(phase, axis=0)
+    
+    # Unwrap along the second axis (columns)
+    unwrapped_phase = np.unwrap(unwrapped_phase, axis=1)
+    
+    return unwrapped_phase
+plt.figure(figsize=(15, 5),dpi = 600)
+plt.subplot(1, 4, 1)
+plt.imshow(image)
+plt.title("Original Image")
+plt.colorbar()
+plt.subplot(1, 4, 2)
+phase = np.angle(model.sols[-1][0,0,:,:].to('cpu'))
+phase = unwrap_2d(phase)
+plt.imshow(phase)
+plt.title("R-Phase")
+plt.colorbar()
+plt.subplot(1, 4, 3)
+plt.imshow(np.abs(model.sols[-1][0,0,:,:].to('cpu')))
+plt.title("R-Magnitude")
+plt.colorbar()
+plt.subplot(1, 4, 4)
+plt.imshow(model.loss.y[0, 0].real.to('cpu'))
+plt.title("Loss")
+plt.colorbar()
 # %%

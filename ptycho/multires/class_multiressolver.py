@@ -180,7 +180,7 @@ class MultiResSolver():
         self.sols[self.multires.loc["s"] - 1] = c_k
 
 
-    def solve_multigrid(self,x0):
+    def solve_multigrid(self):
         #implements exact residual-based multigrid
 
         F, reg, multires = self.loss.F, self.loss.reg, self.multires
@@ -192,7 +192,11 @@ class MultiResSolver():
             s, size = multires.loc["s"], 2 ** multires.loc["s"]
 
             self.loc["grid"] = grid
-            self.loc['d_k'] = torch.randn((1, 1, size - 1, size - 1)).double().to(F.device)/10
+
+            d0 = torch.randn((1, 1, size - 1, size - 1)).double().to(F.device)/100
+            #d0 = torch.stack([d0, d0], dim=-1)
+            #d0 = torch.view_as_complex(d0).double().to(torch.complex128)
+            self.loc['d_k'] = d0
             #if s != 9:
             #    self.loc['d_k'] = torch.randn((1, 1, size - 1, size - 1)).double().to(F.device)
             #else: 
