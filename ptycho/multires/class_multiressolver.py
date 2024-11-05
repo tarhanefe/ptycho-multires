@@ -91,7 +91,7 @@ class MultiResSolver():
 
     def solve_scale(self):
         alpha_d = 0.8
-        alpha_u = 1
+        alpha_u = 1.01
 
         g, d_k =  self.loc["grid"], self.loc["d_k"]
         F, reg, loss = self.loss.F, self.loss.reg, self.loss

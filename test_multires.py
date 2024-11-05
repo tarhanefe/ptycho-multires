@@ -3,7 +3,7 @@ from ptycho.multires.class_multiressolver import *
 import matplotlib.pyplot as plt
 import torch.nn.functional as func
 import torch
-from ptycho.tools.ptychography import Ptychography2
+from ptycho.tools.ptychography import Ptychography2_v2 as Ptychography2
 
 
 def run_test():
@@ -11,12 +11,12 @@ def run_test():
     
     scale = 7
     I_in = 15*np.array([1, 15, 10, 5, 2, 5, 10, 30, 100])
-    I_out = 80*np.array([0, 0, 0, 0, 7, 7, 7, 5, 15])
-    #I_out = 40*np.array([0, 0, 0, 0, 0, 0, 0, 0, 10])
+    #I_out = 40*np.array([0, 0, 0, 0, 7, 7, 6, 5, 15])
+    I_out = 300*np.array([0, 0, 0, 0, 0, 0, 0, 0, 10])
     cycle = [0, -1, -1, -1, -1,1,  1, 1, 1]
     device = "cuda"
     lmbda = 1e-10
-    LR = 0.1
+    LR = 0.01
     tol = [1e-10] * 9
     tol_in = [1e-10] * 9
     img_count = 10*10
@@ -25,7 +25,7 @@ def run_test():
                            probe_radius=20, defocus_factor=0, 
                            fov=170, threshold=0.3, device=device)
 
-    image = plt.imread('images/peppers_reduced.jpg')[:2**scale-1, :2**scale-1] / 255
+    image = plt.imread('images/simple_image.jpg')[:2**scale-1, :2**scale-1] / 255
     image_tensor = torch.tensor(image).double().to(device).view(1, 1, 2**scale-1, 2**scale-1)
     image_tensor_ = torch.exp(1j * image_tensor)
     #image_tensor_ = torch.stack([image_tensor, image_tensor], dim=-1)
@@ -46,39 +46,6 @@ def run_test():
     model.solve_multigrid()
     model.print_time()
     return model
-
-def plot_results(model,image):
-    plt.figure(figsize=(15, 5),dpi = 600)
-    plt.subplot(1, 4, 1)
-    plt.imshow(image)
-    plt.title("Original Image")
-    plt.colorbar()
-    plt.subplot(1, 4, 2)
-    phase = torch.angle(model.sols[-1][0,0,:,:].to('cpu'))
-    # mean_phase = torch.angle(torch.mean(model.sols[-1][0,0,:,:].to('cpu')))
-    # std_phase = torch.std(model.sols[-1][0,0,:,:].to('cpu'))
-    # final_est = torch.exp(1j * (phase - mean_phase)/std_phase)
-    # phase = torch.angle(final_est)
-    plt.imshow(phase)
-    plt.title("R-Phase")
-    plt.colorbar()
-    plt.subplot(1, 4, 3)
-    plt.imshow(np.abs(model.sols[-1][0,0,:,:].to('cpu')))
-    plt.title("R-Magnitude")
-    plt.colorbar()
-    plt.subplot(1, 4, 4)
-    plt.imshow(model.loss.y[0, 0].real.to('cpu'))
-    plt.title("Loss")
-    plt.colorbar()
-    return None 
-# %%
-image = plt.imread('images/peppers_reduced.jpg')[:2**7-1, :2**7-1] / 255
-model = run_test()
-
-# %%
-plot_results(model,image)
-
-# %%
 def unwrap_2d(phase):
     """
     Unwraps a 2D phase array using NumPy's 1D unwrap function.
@@ -96,23 +63,51 @@ def unwrap_2d(phase):
     unwrapped_phase = np.unwrap(unwrapped_phase, axis=1)
     
     return unwrapped_phase
+
+def plot_results(model,image):
+
+    plt.figure(figsize=(15, 5),dpi = 600)
+    plt.subplot(1, 3, 1)
+    plt.imshow(image,cmap='gray')
+    plt.title("Original Image")
+    plt.colorbar()
+    plt.subplot(1, 3, 2)
+    phase = torch.angle(model.sols[-1][0,0,:,:].to('cpu'))
+    phase = unwrap_2d(phase)
+    plt.imshow(phase,cmap = 'gray')
+    plt.title("Reconstructed Image")
+    plt.colorbar()
+    plt.subplot(1, 3, 3)
+    plt.imshow(np.abs(np.array(image)-np.array(phase)),cmap='gray')
+    plt.title("Loss")
+    plt.colorbar()
+    return None 
+# %%
+image = plt.imread('images/simple_image.jpg')[:2**7-1, :2**7-1] / 255
+model = run_test()
+
+# %%
+plot_results(model,image)
+
+# %%
+
 plt.figure(figsize=(15, 5),dpi = 600)
 plt.subplot(1, 4, 1)
-plt.imshow(image)
+plt.imshow(image,cmap='gray')
 plt.title("Original Image")
 plt.colorbar()
 plt.subplot(1, 4, 2)
 phase = np.angle(model.sols[-1][0,0,:,:].to('cpu'))
 phase = unwrap_2d(phase)
-plt.imshow(phase)
+plt.imshow(phase,cmap = 'gray')
 plt.title("R-Phase")
 plt.colorbar()
 plt.subplot(1, 4, 3)
-plt.imshow(np.abs(model.sols[-1][0,0,:,:].to('cpu')))
+plt.imshow(np.abs(model.sols[-1][0,0,:,:].to('cpu')),cmap='gray')
 plt.title("R-Magnitude")
 plt.colorbar()
 plt.subplot(1, 4, 4)
-plt.imshow(model.loss.y[0, 0].real.to('cpu'))
+plt.imshow(model.loss.y[0, 0].real.to('cpu'),cmap = 'gray')
 plt.title("Loss")
 plt.colorbar()
 # %%
