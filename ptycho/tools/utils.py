@@ -152,3 +152,10 @@ def complex_clamp(input, min=None, max=None):
     # Recombine the clamped real and imaginary parts into a complex tensor
     return torch.complex(real_clamped, imag_clamped)
 
+
+def scrapper(x):
+    if type(x) != list:
+        return x
+    else: 
+        return scrapper(x[0])
+    

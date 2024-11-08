@@ -136,6 +136,16 @@ class Ptychography2(PhaseRetrievalBase):
             mask[torch.sqrt((xx-self.in_shape[0]//2)**2 + (yy-self.in_shape[1]//2)**2) 
                 < self.in_shape[0]//2] = 1
             pupil = mask * torch.exp(1j * 2 * np.pi * torch.rand(self.in_shape))
+        
+        elif type == 'square pupil':
+            x = torch.arange(self.in_shape[0], dtype=torch.float64)
+            y = torch.arange(self.in_shape[1], dtype=torch.float64)
+            xx, yy = torch.meshgrid(x, y, indexing='ij')
+            
+            # Construct pupil
+            pupil = torch.zeros(self.in_shape)
+            pupil[torch.abs(xx-self.in_shape[0]//2) < self.in_shape[0]//4] = 1
+            pupil[torch.abs(yy-self.in_shape[1]//2) < self.in_shape[1]//4] = 1
         self.pupil = pupil  # TODO: clean this :)
         return pupil
         
@@ -165,6 +175,10 @@ class Ptychography2(PhaseRetrievalBase):
             probe *= torch.exp(- ((xx-self.in_shape[0]//2)**2 + (yy-self.in_shape[1]//2)**2)
                                / 2 / (probe_radius/2)**2
                                )
+        if type == "square":
+            probe = torch.zeros(self.in_shape)
+            probe[self.in_shape[0]//2-probe_radius//2:self.in_shape[0]//2+probe_radius//2,
+                  self.in_shape[1]//2-probe_radius//2:self.in_shape[1]//2+probe_radius//2] = 1
         return probe.to(self.device)
         
     def renormalize_probe(self):
@@ -267,6 +281,17 @@ class Ptychography2_v2(PhaseRetrievalBase):
             mask[torch.sqrt((xx-self.in_shape[0]//2)**2 + (yy-self.in_shape[1]//2)**2) 
                 < self.in_shape[0]//2] = 1
             pupil = mask * torch.exp(1j * 2 * np.pi * torch.rand(self.in_shape))
+        
+        elif type == 'square pupil':
+            x = torch.arange(self.in_shape[0], dtype=torch.float64)
+            y = torch.arange(self.in_shape[1], dtype=torch.float64)
+            xx, yy = torch.meshgrid(x, y, indexing='ij')
+            
+            # Construct pupil
+            pupil = torch.zeros(self.in_shape)
+            pupil[torch.abs(xx-self.in_shape[0]//2) < self.in_shape[0]//4] = 1
+            pupil[torch.abs(yy-self.in_shape[1]//2) < self.in_shape[1]//4] = 1
+
         self.pupil = pupil  # TODO: clean this :)
         return pupil
         
@@ -296,6 +321,10 @@ class Ptychography2_v2(PhaseRetrievalBase):
             probe *= torch.exp(- ((xx-self.in_shape[0]//2)**2 + (yy-self.in_shape[1]//2)**2)
                                / 2 / (probe_radius/2)**2
                                )
+        elif type == "square":
+            probe = torch.zeros(self.in_shape)
+            probe[self.in_shape[0]//2-probe_radius//2:self.in_shape[0]//2+probe_radius//2,
+                  self.in_shape[1]//2-probe_radius//2:self.in_shape[1]//2+probe_radius//2] = 1
         return probe.to(self.device)
         
     def renormalize_probe(self):

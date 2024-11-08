@@ -29,7 +29,7 @@ class MultiResSolver():
         self.loss = loss
 
         self.LR = LR
-
+        self.lr_list = []
         self.cycle = {"cycle": cycle, "I_in": I_in, "I_out": I_out, "tol": tol, "tol_in": tol_in}
 
         self.measures = {"loss": [], "mse": [], "reg": [], "rel_loss": [], "iters": [], "time": []}
@@ -101,6 +101,7 @@ class MultiResSolver():
         self.up_measures(c_k, c_kp1)
         self.measures["time"].append(-time.time())
         while self.measures["iters"][-1][-1] < self.cycle["I_out"][g] and self.measures["rel_loss"][-1][-1] > self.cycle["tol"][g]:
+            self.lr_list.append(self.LR)
             inner_prox = d_k + self.calc_grad(d_k) * (self.LR*self.multires.loc["sigma_U"] ** -2)
             c_kp1 = reg.grad(y=inner_prox,
                              iter_in=self.cycle["I_in"][g],

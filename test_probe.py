@@ -3,23 +3,23 @@ import torch
 from matplotlib import pyplot as plt
 from time import time
 
-from ptycho.tools.ptychography import Ptychography2
+from ptycho.tools.ptychography import Ptychography2_v2 as Ptychography2
 from ptycho.tools.u_electron_microscopy import initialize_physical_params, get_proj, get_ring_average
 from ptycho.tools.fisher_information import compute_fi, hartley_transform_fim
 from ptycho.tools.u_ptychography import get_overlap_img
-
+#%%
 # Initialize object
 size = 127
 n_img = 10*10
 param = initialize_physical_params(shape=size, pix_size=1)
 x = get_proj(param).unsqueeze(0).unsqueeze(0)
 device = "cpu"
-
+#%%
 # Initialize forward operators
-ptycho_fwd = Ptychography2(in_shape=(size, size), n_img=n_img, probe_type='defocus pupil',
-                           probe_radius=20, defocus_factor=0, 
+ptycho_fwd = Ptychography2(in_shape=(size, size), n_img=n_img, probe_type='square',
+                           probe_radius=40, defocus_factor=0, 
                            fov=170, threshold=0.3, device=device)
-
+#%%
 # Plot probe
 probe = ptycho_fwd.probe
 plt.figure(figsize=(10, 5),dpi = 600)
