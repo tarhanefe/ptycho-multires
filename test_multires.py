@@ -75,18 +75,18 @@ def run_test():
     
     scale = 7
     I_in = 15*np.array([1, 15, 10, 5, 2, 5, 10, 30, 100])
-    I_out = 30*np.array([0, 0, 0, 0, 7, 7, 6, 5, 80])
+    I_out = 20*np.array([0, 0, 0, 0, 8, 7, 6, 5, 80])
     #I_out = 300*np.array([0, 0, 0, 0, 0, 0, 0, 0, 10])
     cycle = [0, -1, -1, -1, -1,1,  1, 1, 1]
     device = "cuda"
-    lmbda = 1e-10
+    lmbda = 1e-7
     LR = 0.01
     tol = [1e-10] * 9
     tol_in = [1e-10] * 9
     img_count = 10*10
 
     linOperator = Ptychography2(in_shape=(2**scale-1, 2**scale-1), n_img=img_count, probe_type='square',
-                           probe_radius=30, defocus_factor=0, 
+                           probe_radius=32, defocus_factor=0, 
                            fov=170, threshold=0.3, device=device)
 
     image = plt.imread('images/peppers_reduced.jpg')[:2**scale-1, :2**scale-1] / 255

@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from ptycho.tools.linop import LinOpFFT, LinOpRoll, LinOpMul, LinOpFFT2,LinOpIFFT2,LinOpRoll2, LinOpCrop2, LinOpCat, BaseLinOp
 from ptycho.tools.phaseretrieval import PhaseRetrievalBase
-from ptycho.tools.u_ptychography import generate_shifts, get_probe_diameter, get_overlap_img
+from ptycho.tools.u_ptychography import generate_shifts, get_probe_diameter, get_overlap_img,generate_shifts_v2
 from ptycho.tools.u_czt import custom_fft2
 
 
@@ -67,6 +67,8 @@ class Ptychography2(PhaseRetrievalBase):
             probe_diameter = 0  # get_probe_diameter(self.probe, threshold=threshold, n_dim=2)
             self.shifts = generate_shifts(size=in_shape, n_img=n_img,
                                           probe_diameter=probe_diameter, fov=fov, n_dim=2)
+            self.shifts = generate_shifts_v2(size=in_shape,probe_radius=self.probe_radius)
+
         self.renormalize_probe()
         self.linop = self.build_lin_op() #!!!!!!!!!!!!!!
 
@@ -211,7 +213,10 @@ class Ptychography2_v2(PhaseRetrievalBase):
             self.fov = fov
             probe_diameter = 0  # get_probe_diameter(self.probe, threshold=threshold, n_dim=2)
             self.shifts = generate_shifts(size=in_shape, n_img=n_img,
-                                          probe_diameter=probe_diameter, fov=fov, n_dim=2)
+                                         probe_diameter=probe_diameter, fov=fov, n_dim=2)
+        
+            self.shifts = generate_shifts_v2(size=in_shape, probe_radius=self.probe_radius)
+            self.n_img = len(self.shifts)
         self.renormalize_probe()
         self.linop = self.build_lin_op() #!!!!!!!!!!!!!!
 
@@ -322,9 +327,15 @@ class Ptychography2_v2(PhaseRetrievalBase):
                                / 2 / (probe_radius/2)**2
                                )
         elif type == "square":
-            probe = torch.zeros(self.in_shape)
-            probe[self.in_shape[0]//2-probe_radius//2:self.in_shape[0]//2+probe_radius//2,
-                  self.in_shape[1]//2-probe_radius//2:self.in_shape[1]//2+probe_radius//2] = 1
+            # shape = (self.in_shape[0] + 1, self.in_shape[1] + 1)
+            # probe = torch.zeros(shape)
+            # probe[self.in_shape[0]//2 + 1-probe_radius//2:self.in_shape[0]//2+probe_radius//2 + 1,
+            #       self.in_shape[1]//2 + 1-probe_radius//2:self.in_shape[1]//2+probe_radius//2 + 1] = 1
+            shape = (self.in_shape[0], self.in_shape[1])
+            probe = torch.zeros(shape)
+            probe[self.in_shape[0]//2 -probe_radius//2:self.in_shape[0]//2+probe_radius//2 ,
+                  self.in_shape[1]//2 -probe_radius//2:self.in_shape[1]//2+probe_radius//2 ] = 1
+            
         return probe.to(self.device)
         
     def renormalize_probe(self):

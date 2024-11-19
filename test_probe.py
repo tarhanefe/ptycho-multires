@@ -2,11 +2,10 @@
 import torch
 from matplotlib import pyplot as plt
 from time import time
-
+import numpy as np
 from ptycho.tools.ptychography import Ptychography2_v2 as Ptychography2
 from ptycho.tools.u_electron_microscopy import initialize_physical_params, get_proj, get_ring_average
-from ptycho.tools.fisher_information import compute_fi, hartley_transform_fim
-from ptycho.tools.u_ptychography import get_overlap_img
+from ptycho.tools.u_ptychography import get_overlap_img,get_overlap_area
 #%%
 # Initialize object
 size = 127
@@ -17,7 +16,7 @@ device = "cpu"
 #%%
 # Initialize forward operators
 ptycho_fwd = Ptychography2(in_shape=(size, size), n_img=n_img, probe_type='square',
-                           probe_radius=40, defocus_factor=0, 
+                           probe_radius=32, defocus_factor=0, 
                            fov=170, threshold=0.3, device=device)
 #%%
 # Plot probe
@@ -41,27 +40,12 @@ plt.title("Overlapped probes")
 plt.colorbar()
 plt.show()
 
-# %%
-import matplotlib.pyplot as plt
-import numpy as np
-scale = 7
-image = plt.imread('images/peppers_reduced.jpg')[:2**scale-1, :2**scale-1] / 255
-new_img = image * np.array(probe)
-plt.figure(dpi = 600)
-plt.imshow(np.abs(new_img))
+overlap_area = get_overlap_area(ptycho_fwd.probe, ptycho_fwd.shifts)
+plt.figure(dpi = 600,figsize=(10,10))
+plt.imshow(overlap_area)
+plt.locator_params(axis='x', nbins=30)  # Increase number of x-axis ticks to 20
+plt.locator_params(axis='y', nbins=30)
+plt.title("Overlapped probes")
 plt.colorbar()
 plt.show()
-
-
-# %% Plot random noise
-import numpy as np
-import matplotlib.pyplot as plt
-
-size = 127
-randm = np.random.rand(size, size)
-plt.figure(dpi = 600)
-plt.imshow(randm)
-plt.show()
-
-
-# %%
+#%%
