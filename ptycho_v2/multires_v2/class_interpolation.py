@@ -1,0 +1,17 @@
+from ptycho_v2.tools_v2.utils import *
+from ptycho_v2.multires_v2.class_multires import *
+import torch.nn.functional as func
+
+class ForwardInterpolation(MultiRes):
+    def __init__(self, linOperator):
+        self.linOperator = linOperator
+
+    def H(self, x):
+        return self.linOperator.apply_linop(x)
+
+    def Ht(self, x):
+        return self.linOperator.apply_linopT(x)
+    
+    def H_power(self,x):
+        return self.linOperator.apply(Iter(self.up, x, self.S - self.loc["s"]))
+
