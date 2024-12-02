@@ -13,6 +13,6 @@ class ForwardInterpolation(MultiRes):
         return self.linOperator.apply_linopT(x)
     
     def H_power(self,x):
-        return self.linOperator.apply(Iter(self.up, x, self.S - self.loc["s"]))
+        return self.linOperator.apply(x)
     
 

@@ -12,35 +12,29 @@ def get_probe_diameter(probe, threshold=0.1, n_dim=1):
         mid_idx = int(np.ceil(probe.shape[0]/2+0.5))
         return torch.count_nonzero(torch.abs(probe[mid_idx, :]) > threshold)
 
-def generate_shifts(size, n_img, probe_diameter=10, fov=None, n_dim=1):
-    assert n_dim in [1, 2], "n_dim must be 1 or 2"
-    if fov is None:
-        start_shift = -(size-probe_diameter)//2
-        end_shift = (size-probe_diameter)//2
-    else:
-        start_shift = - fov // 2
-        end_shift = fov // 2
+def generate_shifts(in_size, shift_amount):
+    """
+    Generates shifts for scanning based on the input size and shift amount.
 
-    if n_dim == 1:
-        return np.linspace(start_shift, end_shift, n_img).astype(int)
-    else:
-        assert int(np.sqrt(n_img))**2 == n_img, "n_img needs to be a perfect square"
-        side_n_img = int(np.sqrt(n_img))
-        shifts = np.linspace(start_shift, end_shift, side_n_img).astype(int)
-        shifts_h, shifts_v = np.meshgrid(shifts, shifts, indexing='ij')
-        return np.concatenate(
-            [shifts_v.reshape(n_img, 1), shifts_h.reshape(n_img, 1)], axis=1)
+    Parameters:
+    - in_size (int): The size of the input image or region (assumes square region for simplicity).
+    - shift_amount (int): Distance between consecutive shifts.
 
-def generate_shifts_v2(size, probe_radius=10, n_dim=1):
-    size = size[0] + 1
-    n_img = int(((2*(size)/probe_radius)+1)**2)
-    start_shift = - (size) // 2 
-    end_shift = (size) // 2  
-    side_n_img = int(np.sqrt(n_img))
-    shifts = np.linspace(start_shift, end_shift, side_n_img).astype(int)
+    Returns:
+    - shifts (numpy array): Array of 2D shifts (vertical and horizontal).
+    """
+    # Calculate the range of shifts based on input size
+    half_size = in_size // 2  # Half of the input size to define the range
+    n_shifts = (2 * half_size // shift_amount) + 1  # Number of shifts along one axis
+
+    # Generate shift values using linspace
+    shifts = np.linspace(-half_size, half_size, n_shifts).astype(int)
+
+    # Create a 2D grid of shifts
     shifts_h, shifts_v = np.meshgrid(shifts, shifts, indexing='ij')
-    return np.concatenate(
-        [shifts_v.reshape(-1, 1), shifts_h.reshape(-1, 1)], axis=1)
+
+    # Combine horizontal and vertical shifts into a single array
+    return np.concatenate([shifts_v.reshape(-1, 1), shifts_h.reshape(-1, 1)], axis=1)
 
 def get_overlap_img(probe, shifts, in_shape=None, n_dim=1):
     assert n_dim in [1, 2], "n_dim must be 1 or 2"
