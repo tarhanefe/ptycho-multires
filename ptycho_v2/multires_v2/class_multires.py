@@ -1,7 +1,7 @@
 import torch.nn.functional as F
 import torch
 import numpy as np
-from ptycho.tools.utils import *
+from ptycho_v2.tools_v2.utils import *
 
 
 class MultiRes():
@@ -52,7 +52,7 @@ class MultiRes():
 
 
     def up(self, x):
-        return x.repeat(2, 2).repeat(2,3)
+        return torch.tile(x, (1, 1, 2, 2))
 
     def down(self, x):
         return x[:, :, 0::2, 0::2]

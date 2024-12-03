@@ -91,7 +91,8 @@ class Ptychography(PhaseRetrievalBase):
             self.initialize(x.shape[-2:])  # Initialize based on input size
         else:
             pass
-        copy_matrx = self.copy_matrix(self.linop.apply(x),self.n_copies)
+        Fx = self.linop.apply(x)
+        copy_matrx = self.copy_matrix(Fx,self.n_copies)
         return torch.abs(copy_matrx * self.multipliers)**2
 
     def apply_linop(self, x):
@@ -117,6 +118,7 @@ class Ptychography(PhaseRetrievalBase):
     
     def init_multipliers(self):
         multiplier = 2**(-2 * self.scale)
+        multiplier = 1
         vec = torch.arange(0, 2**self.max_scale) * (2**(-self.scale))
         sinc_exp = torch.sinc(vec) * torch.exp(-1j * np.pi * vec)
         result = sinc_exp.view(-1, 1) @ sinc_exp.view(1, -1)

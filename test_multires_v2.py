@@ -1,7 +1,6 @@
 #%%
 from ptycho_v2.multires_v2.class_multiressolver import *
 import matplotlib.pyplot as plt
-import torch.nn.functional as func
 import torch
 from ptycho_v2.tools_v2.ptychography import Ptychography as Ptychography
 
@@ -76,12 +75,12 @@ def run_test():
     max_probe_size = 32
     max_shift = 8
     device = 'cuda'
-    I_in = 15*np.array([1, 15, 10, 5, 2, 5, 10, 30, 100])
-    I_out = 20*np.array([0, 0, 0, 0, 8, 7, 6, 5, 80])
+    I_in = 15*np.array([1, 15, 10, 5, 10, 30, 100])
+    I_out = 20*np.array([0, 0, 0, 7, 6, 5, 80])
     #I_out = 300*np.array([0, 0, 0, 0, 0, 0, 0, 0, 10])
-    cycle = [0, -1, -1, -1, -1,1,  1, 1, 1]
+    cycle = [0, -1, -1, -1,  1, 1, 1]
     lmbda = 0
-    LR = 0.01
+    LR = 0.1
     tol = [1e-10] * 9
     tol_in = [1e-10] * 9
 
@@ -92,8 +91,8 @@ def run_test():
     image_tensor_ = torch.exp(1j * image_tensor)
     #Initiate the MultiRes class with the inital scale.
     multires = MultiRes(max_scale, device)
-    loss = Loss(linOperator,linOperator.apply(image_tensor_), lmbda = lmbda)
-
+    #loss = Loss(linOperator,linOperator.apply(image_tensor_), lmbda = lmbda)
+    loss = Loss(linOperator,linOperator.apply(image_tensor_))
     model = MultiResSolver(multires, loss, LR = LR,
                            I_in = I_in,
                            I_out = I_out,
@@ -107,7 +106,7 @@ def run_test():
     return model
 
 # %%
-image = plt.imread('images/peppers.jpg')/255
+image = plt.imread('images/peppers_reduced.jpg')/255
 model = run_test()
 
 # %%

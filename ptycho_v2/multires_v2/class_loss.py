@@ -1,10 +1,12 @@
-from ptycho.tools.utils import *
-from ptycho.multires.class_interpolation import *
+from ptycho_v2.tools_v2.utils import *
+from ptycho_v2.multires_v2.class_interpolation import *
 
 
 class Loss():
 
-    def __init__(self, linOperator, y, lmbda=1e-6):
+    #def __init__(self, linOperator, y, lmbda=1e-6):
+    def __init__(self,linOperator, y):
+        pass
         '''
         Sets the scaling factor and the input image. Creates the 
         necessary classes for the forward interpolation and the HTV.
@@ -27,7 +29,8 @@ class Loss():
     #     '''
     #     return (self.reg.eval(x,l1_type) * self.lmbda)
 
-    def calc_loss(self, x, l1_type='l1_row'):
+    #def calc_loss(self, x, l1_type='l1_row'):
+    def calc_loss(self, x):    
         '''
         Calculates the final loss function as the sum of 
         the MSE and the regularization loss. 

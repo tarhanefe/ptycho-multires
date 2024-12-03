@@ -4,11 +4,19 @@ from matplotlib import pyplot as plt
 import numpy as np
 import time
 
-from ptycho.multires.class_htv import *
-from ptycho.multires.class_multires import *
-from ptycho.multires.class_interpolation import *
-from ptycho.multires.class_loss import *
-from ptycho.tools.utils import *
+from ptycho_v2.multires_v2.class_multires import *
+from ptycho_v2.multires_v2.class_interpolation import *
+from ptycho_v2.multires_v2.class_loss import *
+from ptycho_v2.tools_v2.utils import *
+
+
+# 0: stay on the same level 
+# 1: refine 
+# -1: coarsen 
+
+#Create the composite upscale. 
+#Create the shift in the regularization. 
+#Unify the stopping conditions. 
 
 
 class MultiResSolver():
@@ -23,14 +31,14 @@ class MultiResSolver():
         self.lr_list = []
         self.cycle = {"cycle": cycle, "I_in": I_in, "I_out": I_out, "tol": tol, "tol_in": tol_in}
 
-        self.measures = {"loss": [], "mse": [], "reg": [], "rel_loss": [], "iters": [], "time": []}
-
+        #self.measures = {"loss": [], "mse": [], "reg": [], "rel_loss": [], "iters": [], "time": []}
+        self.measures = {"loss": [], "mse": [], "rel_loss": [], "iters": [], "time": []}
         self.loc = {"grid": 0,
                     "d_k": None}
 
         self.sols = [[] for i in range(self.loss.F.S)]
 
-        self.shift = [torch.zeros((1, 1, 2 ** (i + 1) - 1, 2 ** (i + 1) - 1),
+        self.shift = [torch.zeros((1, 1, 2 ** (i + 1) , 2 ** (i + 1)),
                                      device=self.multires.device,
                                      dtype=torch.double) for i in range(self.loss.F.S)]
 
@@ -39,7 +47,6 @@ class MultiResSolver():
                               ', [loss, mse, reg, rel_loss, LR] : [' \
                               + str(np.round(self.measures["loss"][-1][-1], 7)) + ", " \
                               + str(np.round(self.measures["mse"][-1][-1], 7))+ ", " \
-                              + str(np.round(self.measures["reg"][-1][-1], 7)) + ", " \
                               + str(np.round(self.measures["rel_loss"][-1][-1], 7)) + ", " \
                               + str(self.LR) + "] "
 
@@ -52,7 +59,7 @@ class MultiResSolver():
             self.measures["iters"].append([])
             self.measures["loss"].append([])
             self.measures["mse"].append([])
-            self.measures["reg"].append([])
+            #self.measures["reg"].append([])
             self.measures["rel_loss"].append([])
 
         else:
@@ -60,9 +67,10 @@ class MultiResSolver():
                 self.measures["iters"][-1].append(self.measures["iters"][-1][-1] + 1)
             except:
                 self.measures["iters"][-1].append(0)
-            self.measures["loss"][-1].append(self.loss.calc_loss(x1, l1_type= self.l1_type))
+            #self.measures["loss"][-1].append(self.loss.calc_loss(x1, l1_type= self.l1_type))
+            self.measures["loss"][-1].append(self.loss.calc_loss(x1))
             self.measures["mse"][-1].append(self.loss.calc_mse(x1))
-            self.measures["reg"][-1].append(self.loss.calc_reg(x1,l1_type= self.l1_type))
+           # self.measures["reg"][-1].append(self.loss.calc_reg(x1,l1_type= self.l1_type))
             self.measures["rel_loss"][-1].append(calc_error(x2, x1, norm1=self.loss.calc_loss))
 
     def print_time(self):
@@ -85,22 +93,24 @@ class MultiResSolver():
         alpha_u = 1.1
 
         g, d_k =  self.loc["grid"], self.loc["d_k"]
-        F, reg, loss = self.loss.F, self.loss.reg, self.loss
-
+        #F, reg, loss = self.loss.F, self.loss.reg, self.loss
+        F, loss = self.loss.F, self.loss
         t_k, c_kp1, c_k = 1, None, d_k
         self.up_measures()
         self.up_measures(c_k, c_kp1)
         self.measures["time"].append(-time.time())
-        while self.measures["iters"][-1][-1] < self.cycle["I_out"][g] and self.measures["rel_loss"][-1][-1] > self.cycle["tol"][g]:
+        while self.measures["iters"][-1][-1] < self.cycle["I_out"][g]: #and self.measures["rel_loss"][-1][-1] > self.cycle["tol"][g]:
             self.lr_list.append(self.LR)
             inner_prox = d_k + self.calc_grad(d_k) * (self.LR*self.multires.loc["sigma_U"] ** -2)
-            c_kp1 = reg.grad(y=inner_prox,
-                             iter_in=self.cycle["I_in"][g],
-                             lmbda=loss.lmbda,
-                             tau = self.LR * self.multires.loc["sigma_U"] ** -2,
-                             toi=self.cycle["tol_in"][g])
+            c_kp1 = inner_prox
+            # c_kp1 = reg.grad(y=inner_prox,
+            #                  iter_in=self.cycle["I_in"][g],
+            #                  lmbda=loss.lmbda,
+            #                  tau = self.LR * self.multires.loc["sigma_U"] ** -2,
+            #                  toi=self.cycle["tol_in"][g])
             
-            if (self.loss.calc_loss(c_k, l1_type= self.l1_type) < 0.9*self.loss.calc_loss(c_kp1, l1_type= self.l1_type)):
+            #if (self.loss.calc_loss(c_k, l1_type= self.l1_type) < 0.9*self.loss.calc_loss(c_kp1, l1_type= self.l1_type)):
+            if (loss.calc_loss(c_k) < 0.9*loss.calc_loss(c_kp1)):
                 self.LR = alpha_d*self.LR
             else: 
                 self.LR = alpha_u*self.LR
@@ -112,12 +122,11 @@ class MultiResSolver():
         self.measures["time"][-1] += time.time()
         self.sols[self.multires.loc["s"] - 1] = c_k
 
-
     def solve_multigrid(self):
         #implements exact residual-based multigrid
 
-        F, reg, multires = self.loss.F, self.loss.reg, self.multires
-
+        #F, reg, multires = self.loss.F, self.loss.reg, self.multires
+        F, multires = self.loss.F, self.multires
         for grid in range(len(self.cycle["cycle"])):
 
             #s stands for (local) scale
@@ -126,7 +135,7 @@ class MultiResSolver():
 
             self.loc["grid"] = grid
 
-            d0 = torch.randn((1, 1, size - 1, size - 1)).double().to(F.device)/100
+            d0 = torch.randn((1, 1, size , size )).double().to(F.device)/100
             #d0 = torch.stack([d0, d0], dim=-1)
             #d0 = torch.view_as_complex(d0).double().to(torch.complex128)
             self.loc['d_k'] = d0
@@ -144,6 +153,5 @@ class MultiResSolver():
                 self.loc["d_k"] = F.up(self.sols[s - 2])
 
             print('----------- s = ' + str(multires.loc["s"]) + ' -----------' )
-
             self.solve_scale()
 
