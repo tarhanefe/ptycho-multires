@@ -101,15 +101,8 @@ class MultiResSolver():
         self.measures["time"].append(-time.time())
         while self.measures["iters"][-1][-1] < self.cycle["I_out"][g]: #and self.measures["rel_loss"][-1][-1] > self.cycle["tol"][g]:
             self.lr_list.append(self.LR)
-            inner_prox = d_k + self.calc_grad(d_k) * (self.LR*self.multires.loc["sigma_U"] ** -2)
+            inner_prox = d_k + self.calc_grad(d_k) * self.LR
             c_kp1 = inner_prox
-            # c_kp1 = reg.grad(y=inner_prox,
-            #                  iter_in=self.cycle["I_in"][g],
-            #                  lmbda=loss.lmbda,
-            #                  tau = self.LR * self.multires.loc["sigma_U"] ** -2,
-            #                  toi=self.cycle["tol_in"][g])
-            
-            #if (self.loss.calc_loss(c_k, l1_type= self.l1_type) < 0.9*self.loss.calc_loss(c_kp1, l1_type= self.l1_type)):
             if (loss.calc_loss(c_k) < 0.9*loss.calc_loss(c_kp1)):
                 self.LR = alpha_d*self.LR
             else: 
@@ -136,15 +129,9 @@ class MultiResSolver():
             self.loc["grid"] = grid
 
             d0 = torch.randn((1, 1, size , size )).double().to(F.device)/100
-            #d0 = torch.stack([d0, d0], dim=-1)
-            #d0 = torch.view_as_complex(d0).double().to(torch.complex128)
-            self.loc['d_k'] = d0
-            #if s != 9:
-            #    self.loc['d_k'] = torch.randn((1, 1, size - 1, size - 1)).double().to(F.device)
-            #else: 
-            #    self.loc["d_k"] =  x0 + torch.randn((1, 1, size - 1, size - 1)).double().to(F.device)
 
-            #stay on the same scale
+            self.loc['d_k'] = d0
+
             if self.cycle["cycle"][grid] == 0 and type(self.sols[s - 1]) == torch.Tensor:
                 self.loc["d_k"] = self.sols[s - 1]
 
