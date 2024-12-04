@@ -103,13 +103,13 @@ class MultiResSolver():
             self.lr_list.append(self.LR)
             inner_prox = d_k + self.calc_grad(d_k) * self.LR
             c_kp1 = inner_prox
-            if (loss.calc_loss(c_k) < 0.9*loss.calc_loss(c_kp1)):
-                self.LR = alpha_d*self.LR
-            else: 
-                self.LR = alpha_u*self.LR
-                self.up_measures(c_k, c_kp1)
-                c_k, d_k, t_k = fista_fast(t_k, c_kp1, c_k)
-                print(self.infos())
+            # if (loss.calc_loss(c_k) < 0.9*loss.calc_loss(c_kp1)):
+            #     self.LR = alpha_d*self.LR
+            # else: 
+            #     self.LR = alpha_u*self.LR
+            self.up_measures(c_k, c_kp1)
+            c_k, d_k, t_k = fista_fast(t_k, c_kp1, c_k)
+            print(self.infos())
 
 
         self.measures["time"][-1] += time.time()

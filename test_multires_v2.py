@@ -27,8 +27,6 @@ def unwrap_2d(phase):
     """
     # Unwrap along the first axis (rows)
     unwrapped_phase = np.unwrap(phase, axis=0)
-    
-    # Unwrap along the second axis (columns)
     unwrapped_phase = np.unwrap(unwrapped_phase, axis=1)
     
     return unwrapped_phase

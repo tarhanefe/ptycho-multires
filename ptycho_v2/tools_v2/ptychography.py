@@ -32,8 +32,8 @@ class Ptychography(PhaseRetrievalBase):
         self.shifts = generate_shifts(self.in_shape[-1], self.shift_amount_temp)
         self.n_img = len(self.shifts)
         self.renormalize_probe()
-        self.linop = self.build_lin_op()
         self.init_multipliers()
+        self.linop = self.build_lin_op()
         self.initialized = True
 
     def build_lin_op(self) -> BaseLinOp:
