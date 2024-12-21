@@ -85,32 +85,38 @@ class MultiResSolver():
         Ax = self.loss.F.H(x)
         residual = (self.loss.y - self.loss.F.H_power(x))
         Ax_residual = Ax*residual
-        return self.loss.F.Ht(Ax_residual)
+        return -self.loss.F.Ht(Ax_residual)
         # A.T(Ax * (y - |Ax|^2))
 
     def solve_scale(self):
-        alpha_d = 0.8
-        alpha_u = 1.1
-
         g, d_k =  self.loc["grid"], self.loc["d_k"]
         #F, reg, loss = self.loss.F, self.loss.reg, self.loss
         F, loss = self.loss.F, self.loss
         t_k, c_kp1, c_k = 1, None, d_k
         self.up_measures()
         self.up_measures(c_k, c_kp1)
+        c = 0.5
+        tau = 0.5
         self.measures["time"].append(-time.time())
-        while self.measures["iters"][-1][-1] < self.cycle["I_out"][g]: #and self.measures["rel_loss"][-1][-1] > self.cycle["tol"][g]:
+        while self.measures["iters"][-1][-1] < self.cycle["I_out"][g]:
             self.lr_list.append(self.LR)
-            inner_prox = d_k + self.calc_grad(d_k) * self.LR
-            c_kp1 = inner_prox
-            # if (loss.calc_loss(c_k) < 0.9*loss.calc_loss(c_kp1)):
-            #     self.LR = alpha_d*self.LR
-            # else: 
-            #     self.LR = alpha_u*self.LR
-            self.up_measures(c_k, c_kp1)
-            c_k, d_k, t_k = fista_fast(t_k, c_kp1, c_k)
-            print(self.infos())
+            grad = self.calc_grad(c_k)
+            m = -torch.norm(grad)**2  # Directional derivative term
+            c_kp1 = d_k - grad * self.LR  # Compute the next candidate point
+            t = -c * m # Here, t = -c * m
+            satisfied = False
+            while not satisfied:
+                diff = loss.calc_loss(c_k) - loss.calc_loss(c_kp1) # Armijo condition: f(x) - f(x + αp) >= α * t
+                if diff >= self.LR * t:
+                    satisfied = True  # Armijo condition satisfied
+                else:
+                    self.LR *= tau  # Reduce step size
+                # Recalculate candidate solution with updated alpha
+                c_kp1 = d_k - grad * self.LR
 
+            self.up_measures(c_k, c_kp1)  # Update tracking measures
+            c_k, d_k, t_k = fista_fast(t_k, c_kp1, c_k)  # Perform FISTA update
+            print(self.infos())
 
         self.measures["time"][-1] += time.time()
         self.sols[self.multires.loc["s"] - 1] = c_k
@@ -128,7 +134,7 @@ class MultiResSolver():
 
             self.loc["grid"] = grid
 
-            d0 = torch.randn((1, 1, size , size )).double().to(F.device)/100
+            d0 = torch.randn((1, 1, size , size )).double().to(F.device)/10
 
             self.loc['d_k'] = d0
 

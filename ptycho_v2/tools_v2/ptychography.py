@@ -12,7 +12,6 @@ class Ptychography(PhaseRetrievalBase):
         self.max_shift = max_shift
         self.max_probe_size = max_probe_size
         self.device = device
-
         self.in_shape = None  # To be determined adaptively
         self.shifts = None
         self.probe = None
@@ -60,22 +59,7 @@ class Ptychography(PhaseRetrievalBase):
               self.in_shape[1] // 2 - probe_radius // 2 : self.in_shape[1] // 2 + probe_radius // 2] = 1
         return probe.to(self.device)
     
-    def copy_matrix(self,base_matrix, n):
-        """
-        Creates a larger matrix by repeating the base matrix along dimensions 2 and 3.
-
-        Parameters:
-        - base_matrix (torch.Tensor): A tensor of size [1, 289, 256, 256].
-        - n (int): Number of times to repeat the base matrix along dimensions 2 and 3.
-
-        Returns:
-        - shared_matrix (torch.Tensor): A tensor of size [1, 289, 256*n, 256*n] with shared parameters.
-        """
-        # Ensure base_matrix has the expected shape
-        assert base_matrix.dim() == 4, "Base matrix must have 4 dimensions."
-        assert base_matrix.size(2) == base_matrix.size(3), "Dimensions 2 and 3 must be equal (square matrix)."
-        
-        # Repeat along dimensions 2 and 3
+    def copy(self,base_matrix, n):
         shared_matrix = base_matrix.repeat(1, 1, n, n)
         return shared_matrix
 
@@ -91,9 +75,10 @@ class Ptychography(PhaseRetrievalBase):
             self.initialize(x.shape[-2:])  # Initialize based on input size
         else:
             pass
-        Fx = self.linop.apply(x)
-        copy_matrx = self.copy_matrix(Fx,self.n_copies)
-        return torch.abs(copy_matrx * self.multipliers)**2
+        x = self.linop.apply(x)
+        x = self.copy(x,self.n_copies)
+        x = torch.abs(x * self.multipliers)**2
+        return x
 
     def apply_linop(self, x):
         if self.initialized and x.shape[-2:] != self.in_shape:
@@ -102,28 +87,33 @@ class Ptychography(PhaseRetrievalBase):
             self.initialize(x.shape[-2:])  # Initialize based on input size
         else:
             pass
-        copy_matrx = self.copy_matrix(super().apply_linop(x),self.n_copies)
-        return copy_matrx * self.multipliers
+        x = super().apply_linop(x)
+        x = self.copy(x,self.n_copies)
+        x = x * self.multipliers
+        return x
 
-    def apply_linopT(self, x):
-        x = x[:,:,:self.in_shape[0],:self.in_shape[1]]
-        if self.initialized and x.shape[-2:] != self.in_shape:
-            self.initialize(x.shape[-2:])
-        elif not self.initialized:
-            self.initialize(x.shape[-2:])  # Initialize based on input size
-        else:
-            pass
-        multipliers_conj = self.multipliers.T.conj()
-        return super().apply_linopT(x) * multipliers_conj[:self.in_shape[0],:self.in_shape[1]]
+    def apply_linopT(self, y):
+        y = y * self.multipliers.conj()
+        y = self.copyT(y, self.in_shape[0])
+        y = super().apply_linopT(y)
+        return y
     
     def init_multipliers(self):
         multiplier = 2**(-2 * self.scale)
-        multiplier = 1
         vec = torch.arange(0, 2**self.max_scale) * (2**(-self.scale))
         sinc_exp = torch.sinc(vec) * torch.exp(-1j * np.pi * vec)
         result = sinc_exp.view(-1, 1) @ sinc_exp.view(1, -1)
-        self.multipliers = result * multiplier
+        self.multipliers = result * multiplier 
         self.multipliers = self.multipliers.to(self.device)
 
     def restart(self):
         self.initialized = False
+
+    def copyT(self,images: torch.Tensor, patch_size: int) -> torch.Tensor:
+        _, batch_size, height, _ = images.shape
+        n = height
+        grid_size = n // patch_size  
+        patches = images.reshape(1, batch_size, grid_size, patch_size, grid_size, patch_size)
+        patches = patches.sum(dim=(2, 4))
+
+        return patches

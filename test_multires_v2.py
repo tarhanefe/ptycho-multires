@@ -78,7 +78,7 @@ def run_test():
     #I_out = 300*np.array([0, 0, 0, 0, 0, 0, 0, 0, 10])
     cycle = [0, -1, -1, -1,  1, 1, 1]
     lmbda = 0
-    LR = 0.01
+    LR = 1
     tol = [1e-10] * 9
     tol_in = [1e-10] * 9
 

@@ -20,10 +20,9 @@ image_tensor = torch.tensor(image).double().to(device).view(1, 1, 2**max_scale, 
 image_tensor_ = torch.exp(1j * image_tensor)
 image_tensor_ = image_tensor_[:,:,:2**(max_scale-1),:2**(max_scale-1)]
 image_tensor_ = image_tensor_[:,:,:2**(max_scale-2),:2**(max_scale-2)]
-image_tensor_ = image_tensor_[:,:,:2**(max_scale-3),:2**(max_scale-3)]
-image_tensor_ = image_tensor_[:,:,:2**(max_scale-4),:2**(max_scale-4)]
-image_tensor_ = image_tensor_[:,:,:2**(max_scale-5),:2**(max_scale-5)]
-image_tensor_ = image_tensor_[:,:,:2**(max_scale-6),:2**(max_scale-6)]
+# image_tensor_ = image_tensor_[:,:,:2**(max_scale-3),:2**(max_scale-3)]
+# image_tensor_ = image_tensor_[:,:,:2**(max_scale-4),:2**(max_scale-4)]
+
 
 #%%
 
