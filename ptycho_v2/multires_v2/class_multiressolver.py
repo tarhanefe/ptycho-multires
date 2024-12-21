@@ -83,10 +83,10 @@ class MultiResSolver():
     
     def calc_grad(self,x):
         Ax = self.loss.F.H(x)
-        residual = (self.loss.y - self.loss.F.H_power(x))
-        Ax_residual = Ax*residual
-        return -self.loss.F.Ht(Ax_residual)
-        # A.T(Ax * (y - |Ax|^2))
+        Res = (self.loss.F.H_power(x) - self.loss.y)
+        Ax_residual = Ax*Res
+        Grad = self.loss.F.Ht(Ax_residual)
+        return Grad
 
     def solve_scale(self):
         g, d_k =  self.loc["grid"], self.loc["d_k"]
@@ -134,7 +134,7 @@ class MultiResSolver():
 
             self.loc["grid"] = grid
 
-            d0 = torch.randn((1, 1, size , size )).double().to(F.device)/10
+            d0 = torch.randn((1, 1, size , size )).double().to(F.device)
 
             self.loc['d_k'] = d0
 

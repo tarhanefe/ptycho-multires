@@ -99,7 +99,8 @@ class Ptychography(PhaseRetrievalBase):
         return y
     
     def init_multipliers(self):
-        multiplier = 2**(-2 * self.scale)
+        #multiplier = 2**(-2 * self.scale)
+        multiplier = 1
         vec = torch.arange(0, 2**self.max_scale) * (2**(-self.scale))
         sinc_exp = torch.sinc(vec) * torch.exp(-1j * np.pi * vec)
         result = sinc_exp.view(-1, 1) @ sinc_exp.view(1, -1)
