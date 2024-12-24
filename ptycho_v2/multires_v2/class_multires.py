@@ -10,7 +10,6 @@ class MultiRes():
     S = None
     size = None
 
-    # local variables for multiresolution purpose
     loc = {"s": 0,
            "S-s": None,
            "sigma_U": None}
@@ -52,9 +51,10 @@ class MultiRes():
 
 
     def up(self, x):
-        return torch.tile(x, (1, 1, 2, 2))
+        m = torch.ones(2, 2).to(self.device)
+        x = torch.kron(x, m)
+        return x / 2
 
     def down(self, x):
-        return x[:, :, 0::2, 0::2]
-
+        return x[:, :, 0::2, 0::2] * 2
 

@@ -10,15 +10,6 @@ from ptycho_v2.multires_v2.class_loss import *
 from ptycho_v2.tools_v2.utils import *
 
 
-# 0: stay on the same level 
-# 1: refine 
-# -1: coarsen 
-
-#Create the composite upscale. 
-#Create the shift in the regularization. 
-#Unify the stopping conditions. 
-
-
 class MultiResSolver():
 
     def __init__(self, multires, loss, I_in=None, I_out=None, tol=None, cycle=None, tol_in=None,LR = None,l1_type = 'l1_row'):
@@ -92,52 +83,33 @@ class MultiResSolver():
         g, d_k =  self.loc["grid"], self.loc["d_k"]
         #F, reg, loss = self.loss.F, self.loss.reg, self.loss
         F, loss = self.loss.F, self.loss
-        t_k, c_kp1, c_k = 1, None, d_k
+        t_k, c_kp1, self.c_k = 1, None, d_k
         self.up_measures()
-        self.up_measures(c_k, c_kp1)
-        c = 0.5
-        tau = 0.5
+        self.up_measures(self.c_k, c_kp1)
         self.measures["time"].append(-time.time())
         while self.measures["iters"][-1][-1] < self.cycle["I_out"][g]:
             self.lr_list.append(self.LR)
-            grad = self.calc_grad(c_k)
-            m = -torch.norm(grad)**2  # Directional derivative term
-            c_kp1 = d_k - grad * self.LR  # Compute the next candidate point
-            t = -c * m # Here, t = -c * m
-            satisfied = False
-            while not satisfied:
-                diff = loss.calc_loss(c_k) - loss.calc_loss(c_kp1) # Armijo condition: f(x) - f(x + αp) >= α * t
-                if diff >= self.LR * t:
-                    satisfied = True  # Armijo condition satisfied
-                else:
-                    self.LR *= tau  # Reduce step size
-                # Recalculate candidate solution with updated alpha
-                c_kp1 = d_k - grad * self.LR
-
-            self.up_measures(c_k, c_kp1)  # Update tracking measures
-            c_k, d_k, t_k = fista_fast(t_k, c_kp1, c_k)  # Perform FISTA update
+            grad = self.calc_grad(self.c_k)
+            c_kp1 = d_k - grad * self.LR  
+            self.up_measures(self.c_k, c_kp1)  # Update tracking measures
+            self.c_k, d_k, t_k = fista_fast(t_k, c_kp1, self.c_k)  # Perform FISTA update
             print(self.infos())
 
         self.measures["time"][-1] += time.time()
-        self.sols[self.multires.loc["s"] - 1] = c_k
+        self.sols[self.multires.loc["s"] - 1] = self.c_k
 
     def solve_multigrid(self):
-        #implements exact residual-based multigrid
-
         #F, reg, multires = self.loss.F, self.loss.reg, self.multires
         F, multires = self.loss.F, self.multires
         for grid in range(len(self.cycle["cycle"])):
 
-            #s stands for (local) scale
             multires.set_locals(scale=self.cycle["cycle"][grid], mod="update")
             s, size = multires.loc["s"], 2 ** multires.loc["s"]
-
             self.loc["grid"] = grid
-
-            d0 = torch.randn((1, 1, size , size )).double().to(F.device)
-
+            N = size ** 2
+            std = np.sqrt(2.0 / N)
+            d0 = torch.randn((1, 1, size ,size)).double().to(F.device) * std
             self.loc['d_k'] = d0
-
             if self.cycle["cycle"][grid] == 0 and type(self.sols[s - 1]) == torch.Tensor:
                 self.loc["d_k"] = self.sols[s - 1]
 
