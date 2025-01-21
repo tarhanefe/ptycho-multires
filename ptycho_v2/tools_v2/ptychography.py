@@ -88,6 +88,7 @@ class Ptychography(PhaseRetrievalBase):
         else:
             pass
         x = super().apply_linop(x)
+        self.mini = x
         x = self.copy(x,self.n_copies)
         x = x * self.multipliers
         return x
@@ -105,7 +106,14 @@ class Ptychography(PhaseRetrievalBase):
         sinc_exp = torch.sinc(vec) * torch.exp(-1j * np.pi * vec)
         result = sinc_exp.view(-1, 1) @ sinc_exp.view(1, -1)
         self.multipliers = result * multiplier 
+        # rot_90 = np.rot90(self.multipliers, k=1)  # 90 degrees
+        # rot_180 = np.rot90(self.multipliers, k=2)  # 180 degrees
+        # rot_270 = np.rot90(self.multipliers, k=3)  # 270 degrees
+
+        # # # # Sum the original and rotated versions and divide by 4
+        # self.multipliers = (self.multipliers + rot_90 + rot_180 + rot_270) / 4
         self.multipliers = self.multipliers.to(self.device)
+
 
     def restart(self):
         self.initialized = False

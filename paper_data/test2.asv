@@ -1,0 +1,6 @@
+close all 
+clear all 
+a = [0:511];
+m = [0:511]/512;
+k = 
+plot(a,sin(pi.*m)./pi.*m)

@@ -49,6 +49,4 @@ model = run_test()
 # %%
 plot_results(model,image)
 
-
-
 # %%
