@@ -1,8 +1,8 @@
 import torch
 import numpy as np
-from ptycho_v2.tools_v2.phaseretrieval import FourierFilterPR2, PhaseRetrievalBase
-from ptycho_v2.tools_v2.u_electron_microscopy import get_ctf, get_envelope
-from ptycho_v2.tools_v2.linop import LinOpFFT2
+from cpwc.tools.phaseretrieval import FourierFilterPR2, PhaseRetrievalBase
+from cpwc.tools.u_electron_microscopy import get_ctf, get_envelope
+from cpwc.tools.linop import LinOpFFT2
 
 
 class zernike(FourierFilterPR2):

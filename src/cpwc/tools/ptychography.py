@@ -1,9 +1,9 @@
 from abc import abstractmethod
 import torch
 import numpy as np
-from ptycho_v2.tools_v2.linop import LinOpMul, LinOpFFT2,LinOpRoll2, LinOpCrop2, LinOpCat, BaseLinOp
-from ptycho_v2.tools_v2.phaseretrieval import PhaseRetrievalBase
-from ptycho_v2.tools_v2.u_ptychography import generate_shifts, get_overlap_img
+from cpwc.tools.linop import LinOpMul, LinOpFFT2,LinOpRoll2, LinOpCrop2, LinOpCat, BaseLinOp
+from cpwc.tools.phaseretrieval import PhaseRetrievalBase
+from cpwc.tools.u_ptychography import generate_shifts, get_overlap_img
 
 
 class Ptychography(PhaseRetrievalBase):
