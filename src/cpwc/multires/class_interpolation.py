@@ -1,5 +1,5 @@
-from ptycho_v2.tools_v2.utils import *
-from ptycho_v2.multires_v2.class_multires import *
+from cpwc.tools.utils import *
+from cpwc.multires.class_multires import *
 
 class ForwardInterpolation(MultiRes):
     def __init__(self, linOperator):

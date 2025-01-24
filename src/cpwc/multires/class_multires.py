@@ -1,7 +1,7 @@
 import torch.nn.functional as F
 import torch
 import numpy as np
-from ptycho_v2.tools_v2.utils import *
+from cpwc.tools.utils import *
 
 
 class MultiRes():

@@ -1,5 +1,5 @@
-from ptycho_v2.tools_v2.utils import *
-from ptycho_v2.multires_v2.class_interpolation import *
+from cpwc.tools.utils import *
+from cpwc.multires.class_interpolation import *
 
 
 class Loss():

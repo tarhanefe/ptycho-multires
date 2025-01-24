@@ -4,10 +4,10 @@ from matplotlib import pyplot as plt
 import numpy as np
 import time
 
-from ptycho_v2.multires_v2.class_multires import *
-from ptycho_v2.multires_v2.class_interpolation import *
-from ptycho_v2.multires_v2.class_loss import *
-from ptycho_v2.tools_v2.utils import *
+from cpwc.multires.class_multires import *
+from cpwc.multires.class_interpolation import *
+from cpwc.multires.class_loss import *
+from cpwc.tools.utils import *
 
 
 class MultiResSolver():
