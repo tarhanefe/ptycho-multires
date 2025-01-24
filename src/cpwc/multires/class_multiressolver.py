@@ -4,10 +4,10 @@ from matplotlib import pyplot as plt
 import numpy as np
 import time
 
-from cpwc.multires.class_multires import *
-from cpwc.multires.class_interpolation import *
-from cpwc.multires.class_loss import *
-from cpwc.tools.utils import *
+from src.cpwc.multires.class_multires import *
+from src.cpwc.multires.class_interpolation import *
+from src.cpwc.multires.class_loss import *
+from src.cpwc.tools.utils import *
 
 
 class MultiResSolver():

@@ -1,7 +1,7 @@
 from abc import abstractmethod
 import torch
 import numpy as np
-from cpwc.tools.linop import BaseLinOp, LinOpMatrix, LinOpMul, LinOpFFT, LinOpFFT2, LinOpIdentity
+from src.cpwc.tools.linop import BaseLinOp, LinOpMatrix, LinOpMul, LinOpFFT, LinOpFFT2, LinOpIdentity
 
 class PhaseRetrievalBase():
     def __init__(self, linop:BaseLinOp):

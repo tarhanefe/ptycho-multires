@@ -1,5 +1,5 @@
-from cpwl.tools.utils import *
-from cpwl.multires.class_multires import *
+from src.cpwl.tools.utils import *
+from src.cpwl.multires.class_multires import *
 import torch.nn.functional as func
 
 class ForwardInterpolation(MultiRes):

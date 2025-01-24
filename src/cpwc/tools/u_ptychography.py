@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-from cpwc.tools.linop import LinOpRoll, LinOpRoll2, LinOpCrop, LinOpCrop2
+from src.cpwc.tools.linop import LinOpRoll, LinOpRoll2, LinOpCrop, LinOpCrop2
 
 
 def get_probe_diameter(probe, threshold=0.1, n_dim=1):

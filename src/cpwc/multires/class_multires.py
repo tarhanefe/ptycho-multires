@@ -1,7 +1,7 @@
 import torch.nn.functional as F
 import torch
 import numpy as np
-from cpwc.tools.utils import *
+from src.cpwc.tools.utils import *
 
 
 class MultiRes():

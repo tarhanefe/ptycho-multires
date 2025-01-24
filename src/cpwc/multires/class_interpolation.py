@@ -1,5 +1,5 @@
-from cpwc.tools.utils import *
-from cpwc.multires.class_multires import *
+from src.cpwc.tools.utils import *
+from src.cpwc.multires.class_multires import *
 
 class ForwardInterpolation(MultiRes):
     def __init__(self, linOperator):

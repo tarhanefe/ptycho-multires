@@ -1,6 +1,6 @@
-from cpwl.tools.utils import *
-from cpwl.multires.class_htv import *
-from cpwl.multires.class_interpolation import *
+from src.cpwl.tools.utils import *
+from src.cpwl.multires.class_htv import *
+from src.cpwl.multires.class_interpolation import *
 
 
 class Loss():

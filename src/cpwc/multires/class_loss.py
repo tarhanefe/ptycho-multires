@@ -1,5 +1,5 @@
-from cpwc.tools.utils import *
-from cpwc.multires.class_interpolation import *
+from src.cpwc.tools.utils import *
+from src.cpwc.multires.class_interpolation import *
 
 
 class Loss():

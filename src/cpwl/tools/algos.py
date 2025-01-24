@@ -1,6 +1,6 @@
 import numpy as np
-from cpwl.tools.phaseretrieval import *
-from cpwl.tools.linop          import *
+from src.cpwl.tools.phaseretrieval import *
+from src.cpwl.tools.linop          import *
 
 
 class GradientDescent:
