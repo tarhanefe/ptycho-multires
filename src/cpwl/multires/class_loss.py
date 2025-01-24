@@ -1,6 +1,6 @@
-from ptycho.tools.utils import *
-from ptycho.multires.class_htv import *
-from ptycho.multires.class_interpolation import *
+from cpwl.tools.utils import *
+from cpwl.multires.class_htv import *
+from cpwl.multires.class_interpolation import *
 
 
 class Loss():

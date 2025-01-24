@@ -1,6 +1,6 @@
 import numpy as np
-from ptycho.tools.phaseretrieval import *
-from ptycho.tools.linop          import *
+from cpwl.tools.phaseretrieval import *
+from cpwl.tools.linop          import *
 
 
 class GradientDescent:

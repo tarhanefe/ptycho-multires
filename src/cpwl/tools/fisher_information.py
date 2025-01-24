@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from ptycho.tools.structured_transforms import hartley_transform
+from cpwl.tools.structured_transforms import hartley_transform
 from tqdm import tqdm
 
 def compute_fi(phase_img, forward_operator, sequential=False, eps=1e-5):
