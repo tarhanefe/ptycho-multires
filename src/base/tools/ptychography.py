@@ -1,10 +1,10 @@
 from abc import abstractmethod
 import torch
 import numpy as np
-from ptycho.tools.linop import LinOpFFT, LinOpRoll, LinOpMul, LinOpFFT2,LinOpIFFT2,LinOpRoll2, LinOpCrop2, LinOpCat, BaseLinOp
-from ptycho.tools.phaseretrieval import PhaseRetrievalBase
-from ptycho.tools.u_ptychography import generate_shifts, get_probe_diameter, get_overlap_img
-from ptycho.tools.u_czt import custom_fft2
+from src.base.tools.linop import LinOpFFT, LinOpRoll, LinOpMul, LinOpFFT2,LinOpIFFT2,LinOpRoll2, LinOpCrop2, LinOpCat, BaseLinOp
+from src.base.tools.phaseretrieval import PhaseRetrievalBase
+from src.base.tools.u_ptychography import generate_shifts, get_probe_diameter, get_overlap_img
+from src.base.tools.u_czt import custom_fft2
 
 
 class Ptychography(PhaseRetrievalBase):

@@ -1,9 +1,9 @@
 #%%
-from ptycho.multires.class_multiressolver import *
+from src.base.multires.class_multiressolver import *
 import matplotlib.pyplot as plt
 import torch.nn.functional as func
 import torch
-from ptycho.tools.ptychography import Ptychography2
+from src.base.tools.ptychography import Ptychography2
 
 
 def run_test():
