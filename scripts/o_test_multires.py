@@ -1,4 +1,6 @@
 #%%
+import os 
+os.chdir("..")
 from src.base.multires.class_multiressolver import *
 import matplotlib.pyplot as plt
 import torch.nn.functional as func
@@ -13,7 +15,7 @@ def run_test():
     I_in = [1, 15, 10, 5, 2, 5, 10, 30, 100]
     I_out = [0, 0, 0, 0, 7, 7, 7, 5, 4]
     cycle = [0, -1, -1, -1, -1,1,  1, 1, 1]
-    device = "cpu"
+    device = 'cuda'
     lmbda = 1e-7
     LR = 1e-1
     tol = [1e-8] * 9
@@ -22,9 +24,9 @@ def run_test():
 
     linOperator = Ptychography2(in_shape=(2**scale-1, 2**scale-1), n_img=16, probe_type='defocus pupil',
                            probe_radius=200, defocus_factor=0, 
-                           fov=520, threshold=0.3, device='cpu')
+                           fov=520, threshold=0.3, device=device)
 
-    image = plt.imread('images/peppers.jpg')[:511, :511] / 255
+    image = plt.imread('test_data/peppers.jpg')[:511, :511] / 255
     image_tensor = torch.tensor(image).double().to(device).view(1, 1, 511, 511)
     image_tensor = torch.exp(1j * image_tensor)
     #Initiate the MultiRes class with the inital scale.
@@ -46,13 +48,13 @@ model = run_test()
 # %%
 
 scale = 9
-image = plt.imread('images/peppers.jpg')[:511, :511] / 255
-image_tensor = torch.tensor(image).double().to('cpu').view(1, 1, 511, 511)
+image = plt.imread('test_data/peppers.jpg')[:511, :511] / 255
+image_tensor = torch.tensor(image).double().to('cuda').view(1, 1, 511, 511)
 image_tensor = torch.exp(1j*image_tensor)
 
 linOperator = Ptychography2(in_shape=(2**scale-1, 2**scale-1), n_img=16, probe_type='defocus pupil',
                            probe_radius=25, defocus_factor=0, 
-                           fov=120, threshold=0.3, device='cpu')
+                           fov=120, threshold=0.3, device='cuda')
 #b = np.absolute(linOperator.apply_linop((image_tensor))[0,0,:,:])
 #plt.imshow(b)
 #plt.show()
@@ -74,5 +76,4 @@ plt.imshow(loss,cmap='gray')
 plt.title(r"(c) MSE: $(\angle x - \angle \hat{x})^2$")
 plt.colorbar()
 plt.tight_layout()
-plt.savefig('/home/efe/Desktop/Multiresolution-Framework-for-Fourier-Ptychography/n_figs/linear.png')
 # %%
