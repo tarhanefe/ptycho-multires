@@ -53,7 +53,7 @@ class MultiRes():
     def up(self, x):
         m = torch.ones(2, 2).to(self.device)
         x = torch.kron(x, m)
-        return x / 2
+        return x 
 
     def down(self, x):
         return x[:, :, 0::2, 0::2] * 2

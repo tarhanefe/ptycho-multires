@@ -90,7 +90,7 @@ class MultiResSolver():
         while self.measures["iters"][-1][-1] < self.cycle["I_out"][g]:
             self.lr_list.append(self.LR)
             grad = self.calc_grad(self.c_k)
-            c_kp1 = d_k - grad * self.LR  
+            c_kp1 = d_k - grad * self.LR * self.multires.size
             self.up_measures(self.c_k, c_kp1)  # Update tracking measures
             self.c_k, d_k, t_k = fista_fast(t_k, c_kp1, self.c_k)  # Perform FISTA update
             print(self.infos())
@@ -114,7 +114,7 @@ class MultiResSolver():
                 self.loc["d_k"] = self.sols[s - 1]
 
             #goes on a finer scale
-            elif self.cycle["cycle"][grid] == 1 and s != 9:
+            elif self.cycle["cycle"][grid] == 1 and s != 7:
                 self.loc["d_k"] = F.up(self.sols[s - 2])
 
             print('----------- s = ' + str(multires.loc["s"]) + ' -----------' )

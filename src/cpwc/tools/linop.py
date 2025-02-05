@@ -272,6 +272,19 @@ class LinOpFFTShift(BaseLinOp):
     def applyT(self, x):
         return torch.fft.ifftshift(x)
 
+class LinOpFFTShift2D(BaseLinOp):
+    def __init__(self):
+        self.in_shape = (-1, -1)  # Updated to represent 2D input
+        self.out_shape = (-1, -1)  # Updated to represent 2D output
+
+    def apply(self, x):
+        # Apply fftshift for 2D tensors
+        return torch.fft.fftshift(x, dim=(-2, -1))  # Shift along the last two dimensions
+
+    def applyT(self, x):
+        # Apply ifftshift for 2D tensors
+        return torch.fft.ifftshift(x, dim=(-2, -1))  # Inverse shift along the last two dimensions
+
 class LinOpMul(BaseLinOp):
     def __init__(self, coefficients):
         self.coefficients = coefficients

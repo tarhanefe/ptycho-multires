@@ -1,7 +1,7 @@
 from abc import abstractmethod
 import torch
 import numpy as np
-from src.cpwc.tools.linop import LinOpMul, LinOpFFT2,LinOpRoll2, LinOpCrop2, LinOpCat, BaseLinOp
+from src.cpwc.tools.linop import LinOpMul, LinOpFFT2,LinOpRoll2, LinOpCrop2, LinOpCat, BaseLinOp,LinOpFFTShift2D
 from src.cpwc.tools.phaseretrieval import PhaseRetrievalBase
 from src.cpwc.tools.u_ptychography import generate_shifts, get_overlap_img
 
@@ -24,6 +24,7 @@ class Ptychography(PhaseRetrievalBase):
         self.in_shape = in_shape 
         self.scale = int(np.log2(self.in_shape[0]))
         self.n_copies = 2**(self.max_scale - self.scale)
+        print(f"Scale: {self.scale}, n_copies: {self.n_copies}")
         self.probe_radius_temp = int(self.max_probe_size / self.n_copies)
         self.shift_amount_temp = int(self.max_shift / self.n_copies)
         self.probe = self.construct_probe(probe_radius=self.probe_radius_temp)
@@ -37,16 +38,17 @@ class Ptychography(PhaseRetrievalBase):
 
     def build_lin_op(self) -> BaseLinOp:
         op_fft2 = LinOpFFT2()
+        op_fftshift = LinOpFFTShift2D()
         op_probe = LinOpMul(self.probe)
         if self.in_shape == self.probe.shape:
             return LinOpCat([
-                op_fft2 @ op_probe @ 
+                op_fftshift @ op_fft2 @ op_probe @ 
                 LinOpRoll2(self.shifts[i_probe, 0], self.shifts[i_probe, 1])
                 for i_probe in range(self.n_img)
             ])
         else:
             return LinOpCat([
-                op_fft2 @ op_probe @
+                op_fftshift @ op_fft2 @ op_probe @
                 LinOpCrop2(self.in_shape, self.probe.shape) @
                 LinOpRoll2(self.shifts[i_probe, 0], self.shifts[i_probe, 1])
                 for i_probe in range(self.n_img)
@@ -88,7 +90,6 @@ class Ptychography(PhaseRetrievalBase):
         else:
             pass
         x = super().apply_linop(x)
-        self.mini = x
         x = self.copy(x,self.n_copies)
         x = x * self.multipliers
         return x
@@ -102,16 +103,11 @@ class Ptychography(PhaseRetrievalBase):
     def init_multipliers(self):
         #multiplier = 2**(-2 * self.scale)
         multiplier = 1
-        vec = torch.arange(0, 2**self.max_scale) * (2**(-self.scale))
+        vec = torch.arange(-2**(self.max_scale-1)+1, 2**(self.max_scale-1)+1) * (2**(-self.scale))
+        #vec = torch.arange(0, 2**self.max_scale) * (2**(-self.scale))
         sinc_exp = torch.sinc(vec) * torch.exp(-1j * np.pi * vec)
         result = sinc_exp.view(-1, 1) @ sinc_exp.view(1, -1)
-        self.multipliers = result * multiplier 
-        # rot_90 = np.rot90(self.multipliers, k=1)  # 90 degrees
-        # rot_180 = np.rot90(self.multipliers, k=2)  # 180 degrees
-        # rot_270 = np.rot90(self.multipliers, k=3)  # 270 degrees
-
-        # # # # Sum the original and rotated versions and divide by 4
-        # self.multipliers = (self.multipliers + rot_90 + rot_180 + rot_270) / 4
+        self.multipliers = result * multiplier
         self.multipliers = self.multipliers.to(self.device)
 
 
