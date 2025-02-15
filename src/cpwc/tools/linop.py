@@ -123,7 +123,6 @@ class LinOpIFFT2(BaseLinOp):
     def applyT(self, x):
         return torch.fft.fft2(x, norm="ortho")
 
-
 class LinOpRoll2(BaseLinOp):
     def __init__(self, shifts_dim0, shifts_dim1, pad_zeros=True):
         self.in_shape = (-1,)

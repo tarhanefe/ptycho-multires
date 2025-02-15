@@ -1,14 +1,15 @@
 from abc import abstractmethod
 import torch
 import numpy as np
-from src.cpwc.tools.linop import LinOpMul, LinOpFFT2,LinOpRoll2, LinOpCrop2, LinOpCat, BaseLinOp,LinOpFFTShift2D
+from src.cpwc.tools.linop import LinOpMul, LinOpFFT2,LinOpRoll2, LinOpCrop2, LinOpCat, BaseLinOp, LinOpFFTShift2D
 from src.cpwc.tools.phaseretrieval import PhaseRetrievalBase
 from src.cpwc.tools.u_ptychography import generate_shifts, get_overlap_img
 
 
 class Ptychography(PhaseRetrievalBase):
-    def __init__(self,max_scale = 9,max_probe_size = 128 ,max_shift = 32,device="cuda"):
+    def __init__(self,max_scale = 9,min_scale = 4,max_probe_size = 128 ,max_shift = 32,device="cuda"):
         self.max_scale = max_scale
+        self.min_scale = min_scale
         self.max_shift = max_shift
         self.max_probe_size = max_probe_size
         self.device = device
@@ -24,7 +25,6 @@ class Ptychography(PhaseRetrievalBase):
         self.in_shape = in_shape 
         self.scale = int(np.log2(self.in_shape[0]))
         self.n_copies = 2**(self.max_scale - self.scale)
-        print(f"Scale: {self.scale}, n_copies: {self.n_copies}")
         self.probe_radius_temp = int(self.max_probe_size / self.n_copies)
         self.shift_amount_temp = int(self.max_shift / self.n_copies)
         self.probe = self.construct_probe(probe_radius=self.probe_radius_temp)
@@ -38,17 +38,16 @@ class Ptychography(PhaseRetrievalBase):
 
     def build_lin_op(self) -> BaseLinOp:
         op_fft2 = LinOpFFT2()
-        op_fftshift = LinOpFFTShift2D()
         op_probe = LinOpMul(self.probe)
         if self.in_shape == self.probe.shape:
             return LinOpCat([
-                op_fftshift @ op_fft2 @ op_probe @ 
+                op_fft2 @ op_probe @ 
                 LinOpRoll2(self.shifts[i_probe, 0], self.shifts[i_probe, 1])
                 for i_probe in range(self.n_img)
             ])
         else:
             return LinOpCat([
-                op_fftshift @ op_fft2 @ op_probe @
+                op_fft2 @ op_probe @
                 LinOpCrop2(self.in_shape, self.probe.shape) @
                 LinOpRoll2(self.shifts[i_probe, 0], self.shifts[i_probe, 1])
                 for i_probe in range(self.n_img)
@@ -60,10 +59,6 @@ class Ptychography(PhaseRetrievalBase):
         probe[self.in_shape[0] // 2 - probe_radius // 2 : self.in_shape[0] // 2 + probe_radius // 2,
               self.in_shape[1] // 2 - probe_radius // 2 : self.in_shape[1] // 2 + probe_radius // 2] = 1
         return probe.to(self.device)
-    
-    def copy(self,base_matrix, n):
-        shared_matrix = base_matrix.repeat(1, 1, n, n)
-        return shared_matrix
 
     def renormalize_probe(self):
         self.overlap_img = get_overlap_img(probe=self.probe, shifts=self.shifts, n_dim=2)
@@ -77,9 +72,12 @@ class Ptychography(PhaseRetrievalBase):
             self.initialize(x.shape[-2:])  # Initialize based on input size
         else:
             pass
-        x = self.linop.apply(x)
+
+        x = super().apply_linop(x)
+        if self.scale == self.max_scale:
+            x = LinOpFFTShift2D().apply(x)
         x = self.copy(x,self.n_copies)
-        x = torch.abs(x * self.multipliers)**2
+        x = torch.abs(x * self.multipliers)**2 #* matrix
         return x
 
     def apply_linop(self, x):
@@ -90,29 +88,39 @@ class Ptychography(PhaseRetrievalBase):
         else:
             pass
         x = super().apply_linop(x)
+        if self.scale == self.max_scale:
+            x = LinOpFFTShift2D().apply(x)
+        self.nocopyx = x 
         x = self.copy(x,self.n_copies)
-        x = x * self.multipliers
+        x = x * self.multipliers 
         return x
 
     def apply_linopT(self, y):
         y = y * self.multipliers.conj()
         y = self.copyT(y, self.in_shape[0])
+        if self.scale == self.max_scale:
+            y = LinOpFFTShift2D().applyT(y)
         y = super().apply_linopT(y)
         return y
     
     def init_multipliers(self):
-        #multiplier = 2**(-2 * self.scale)
-        multiplier = 1
-        vec = torch.arange(-2**(self.max_scale-1)+1, 2**(self.max_scale-1)+1) * (2**(-self.scale))
-        #vec = torch.arange(0, 2**self.max_scale) * (2**(-self.scale))
-        sinc_exp = torch.sinc(vec) * torch.exp(-1j * np.pi * vec)
-        result = sinc_exp.view(-1, 1) @ sinc_exp.view(1, -1)
-        self.multipliers = result * multiplier
+        vec = torch.arange(-2**(self.max_scale-1), 2**(self.max_scale-1))
+        exp = torch.exp(-1j * np.pi * (vec*2**(-self.scale)))
+        sinc = torch.sinc(vec * 2**(-self.scale)) 
+        sinc_exp = sinc * exp
+        result = sinc_exp.view(-1, 1) @ sinc_exp.view(1, -1) 
+        multiplier = 2**(self.max_scale-(self.scale))
+        self.multipliers = result * multiplier 
         self.multipliers = self.multipliers.to(self.device)
-
 
     def restart(self):
         self.initialized = False
+
+    def copy(self,base_matrix, n):
+        self.base_matrix = base_matrix # !Sanity Check
+        shared_matrix = base_matrix.repeat(1, 1, n, n)
+        self.shared_matrix = shared_matrix # !Sanity Check
+        return shared_matrix
 
     def copyT(self,images: torch.Tensor, patch_size: int) -> torch.Tensor:
         _, batch_size, height, _ = images.shape

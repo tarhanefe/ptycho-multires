@@ -73,13 +73,12 @@ class MultiResSolver():
         print("Total time: ", tot)
     
     def calc_grad(self,x):
-        Ax = self.loss.F.H(x)
-        Res = (self.loss.F.H_power(x) - self.loss.y)
-        Ax_residual = Ax*Res
-        Grad = self.loss.F.Ht(Ax_residual)
+        Grad = self.loss.F.Ht(self.loss.F.H(x)*(self.loss.F.H_power(x) - self.loss.y))
         return Grad
 
     def solve_scale(self):
+        alpha_u = 1.01
+        alpha_d = 0.8
         g, d_k =  self.loc["grid"], self.loc["d_k"]
         #F, reg, loss = self.loss.F, self.loss.reg, self.loss
         F, loss = self.loss.F, self.loss
@@ -91,6 +90,15 @@ class MultiResSolver():
             self.lr_list.append(self.LR)
             grad = self.calc_grad(self.c_k)
             c_kp1 = d_k - grad * self.LR * self.multires.size
+
+            #if (self.loss.calc_loss(self.c_k) < 0.9*self.loss.calc_loss(c_kp1)):
+            #    self.LR = alpha_d*self.LR
+            #else: 
+            #    self.LR = alpha_u*self.LR
+            #    self.up_measures(self.c_k, c_kp1)
+            #    self.c_k, d_k, t_k = fista_fast(t_k, c_kp1, self.c_k)
+            #    print(self.infos())
+
             self.up_measures(self.c_k, c_kp1)  # Update tracking measures
             self.c_k, d_k, t_k = fista_fast(t_k, c_kp1, self.c_k)  # Perform FISTA update
             print(self.infos())
@@ -99,24 +107,24 @@ class MultiResSolver():
         self.sols[self.multires.loc["s"] - 1] = self.c_k
 
     def solve_multigrid(self):
+        self.final_sols = []
         #F, reg, multires = self.loss.F, self.loss.reg, self.multires
         F, multires = self.loss.F, self.multires
         for grid in range(len(self.cycle["cycle"])):
-
             multires.set_locals(scale=self.cycle["cycle"][grid], mod="update")
             s, size = multires.loc["s"], 2 ** multires.loc["s"]
             self.loc["grid"] = grid
-            N = size ** 2
-            std = np.sqrt(2.0 / N)
+            N = size **2 
+            std = np.sqrt(2/N)
             d0 = torch.randn((1, 1, size ,size)).double().to(F.device) * std
             self.loc['d_k'] = d0
             if self.cycle["cycle"][grid] == 0 and type(self.sols[s - 1]) == torch.Tensor:
                 self.loc["d_k"] = self.sols[s - 1]
-
             #goes on a finer scale
-            elif self.cycle["cycle"][grid] == 1 and s != 7:
+            elif self.cycle["cycle"][grid] == 1:
                 self.loc["d_k"] = F.up(self.sols[s - 2])
 
             print('----------- s = ' + str(multires.loc["s"]) + ' -----------' )
             self.solve_scale()
+            self.final_sols.append(self.sols[s - 1])
 

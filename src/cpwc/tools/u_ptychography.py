@@ -25,10 +25,10 @@ def generate_shifts(in_size, shift_amount):
     """
     # Calculate the range of shifts based on input size
     half_size = in_size // 2  # Half of the input size to define the range
-    n_shifts = (2 * half_size // shift_amount) + 1  # Number of shifts along one axis
+    n_shifts = (2 * half_size // shift_amount) + 3  # Number of shifts along one axis
 
     # Generate shift values using linspace
-    shifts = np.linspace(-half_size, half_size, n_shifts).astype(int)
+    shifts = np.linspace(-half_size - shift_amount, half_size + shift_amount, n_shifts).astype(int)
 
     # Create a 2D grid of shifts
     shifts_h, shifts_v = np.meshgrid(shifts, shifts, indexing='ij')

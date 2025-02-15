@@ -56,5 +56,5 @@ class MultiRes():
         return x 
 
     def down(self, x):
-        return x[:, :, 0::2, 0::2] * 2
+        return x[:, :, 0::2, 0::2] 
 
