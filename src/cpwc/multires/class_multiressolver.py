@@ -12,10 +12,11 @@ from src.cpwc.tools.utils import *
 
 class MultiResSolver():
 
-    def __init__(self, multires, loss, I_in=None, I_out=None, tol=None, cycle=None, tol_in=None,LR = None,l1_type = 'l1_row'):
+    def __init__(self, multires, loss, I_in=None, I_out=None, tol=None, cycle=None, tol_in=None,LR = None,l1_type = 'l1_row',d0 = False):            
+        
         self.l1_type = l1_type
         self.multires = multires
-
+        self.d0 = d0
         self.loss = loss
 
         self.LR = LR
@@ -73,7 +74,8 @@ class MultiResSolver():
         print("Total time: ", tot)
     
     def calc_grad(self,x):
-        Grad = self.loss.F.Ht(self.loss.F.H(x)*(self.loss.F.H_power(x) - self.loss.y))
+        Grad = self.loss.F.Ht((self.loss.F.H(x)/(torch.abs(self.loss.F.H(x))+1e-8))*(torch.sqrt(self.loss.F.H_power(x)) - torch.sqrt(self.loss.y)))
+        #Grad = self.loss.F.Ht(self.loss.F.H(x)*(self.loss.F.H_power(x) - self.loss.y)) ! OLD METHOD 
         return Grad
 
     def solve_scale(self):
@@ -88,8 +90,7 @@ class MultiResSolver():
         self.measures["time"].append(-time.time())
         while self.measures["iters"][-1][-1] < self.cycle["I_out"][g]:
             self.lr_list.append(self.LR)
-            grad = self.calc_grad(self.c_k)
-            c_kp1 = d_k - grad * self.LR * self.multires.size
+            c_kp1 = d_k - self.calc_grad(self.c_k) * self.LR
 
             #if (self.loss.calc_loss(self.c_k) < 0.9*self.loss.calc_loss(c_kp1)):
             #    self.LR = alpha_d*self.LR
@@ -102,9 +103,9 @@ class MultiResSolver():
             self.up_measures(self.c_k, c_kp1)  # Update tracking measures
             self.c_k, d_k, t_k = fista_fast(t_k, c_kp1, self.c_k)  # Perform FISTA update
             print(self.infos())
-
         self.measures["time"][-1] += time.time()
         self.sols[self.multires.loc["s"] - 1] = self.c_k
+
 
     def solve_multigrid(self):
         self.final_sols = []
@@ -116,7 +117,12 @@ class MultiResSolver():
             self.loc["grid"] = grid
             N = size **2 
             std = np.sqrt(2/N)
-            d0 = torch.randn((1, 1, size ,size)).double().to(F.device) * std
+            if self.d0 is False:
+                print('d0 is False')
+                d0 = torch.randn((1, 1, size ,size)).double().to(F.device) * std
+            else: 
+                print('d0 is True')
+                d0 = self.d0
             self.loc['d_k'] = d0
             if self.cycle["cycle"][grid] == 0 and type(self.sols[s - 1]) == torch.Tensor:
                 self.loc["d_k"] = self.sols[s - 1]
