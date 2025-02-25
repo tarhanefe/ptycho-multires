@@ -118,10 +118,8 @@ class MultiResSolver():
             N = size **2 
             std = np.sqrt(2/N)
             if self.d0 is False:
-                print('d0 is False')
                 d0 = torch.randn((1, 1, size ,size)).double().to(F.device) * std
             else: 
-                print('d0 is True')
                 d0 = self.d0
             self.loc['d_k'] = d0
             if self.cycle["cycle"][grid] == 0 and type(self.sols[s - 1]) == torch.Tensor:
