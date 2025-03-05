@@ -12,7 +12,7 @@ from src.cpwc.tools.utils import *
 
 class MultiResSolver():
 
-    def __init__(self, multires, loss, I_in=None, I_out=None, tol=None, cycle=None, tol_in=None,LR = None,l1_type = 'l1_row',d0 = False):            
+    def __init__(self, multires, loss, I_in=None, I_out=None, tol=None, cycle=None, tol_in=None,LR = None,l1_type = 'l1_row',d0 = False,gt = None):            
         
         self.l1_type = l1_type
         self.multires = multires
@@ -24,7 +24,12 @@ class MultiResSolver():
         self.cycle = {"cycle": cycle, "I_in": I_in, "I_out": I_out, "tol": tol, "tol_in": tol_in}
 
         #self.measures = {"loss": [], "mse": [], "reg": [], "rel_loss": [], "iters": [], "time": []}
-        self.measures = {"loss": [], "mse": [], "rel_loss": [], "iters": [], "time": []}
+        self.measures = {"loss": [],
+                         "mse": [], 
+                         "rel_loss": [], 
+                         "iters": [], 
+                         "time": [],
+                         "csim": []}
         self.loc = {"grid": 0,
                     "d_k": None}
 
@@ -41,7 +46,19 @@ class MultiResSolver():
                               + str(np.round(self.measures["mse"][-1][-1], 7))+ ", " \
                               + str(np.round(self.measures["rel_loss"][-1][-1], 7)) + ", " \
                               + str(self.LR) + "] "
+        self.gt = torch.tensor(gt).double().to(self.loss.F.device)
 
+
+    def cosine_similarity(self, gt, recon):
+        gt = self.gt 
+        rec = recon.clone()
+        m = torch.ones(2, 2).to(self.multires.device)
+        max_scale = int(np.log2(gt.shape[-1]))
+        current_scale = self.multires.loc["s"]
+        for i in range(max_scale - current_scale):
+            rec = torch.kron(rec, m)
+        rec += torch.mean(gt) - torch.mean(rec)
+        return torch.abs(torch.sum(gt*rec)) / (torch.norm(gt) * torch.norm(rec))
 
     def up_measures(self, x1=None, x2=None):
 
@@ -53,6 +70,7 @@ class MultiResSolver():
             self.measures["mse"].append([])
             #self.measures["reg"].append([])
             self.measures["rel_loss"].append([])
+            self.measures["csim"].append([])
 
         else:
             try:
@@ -64,7 +82,10 @@ class MultiResSolver():
             self.measures["mse"][-1].append(self.loss.calc_mse(x1))
            # self.measures["reg"][-1].append(self.loss.calc_reg(x1,l1_type= self.l1_type))
             self.measures["rel_loss"][-1].append(calc_error(x2, x1, norm1=self.loss.calc_loss))
+            self.measures["csim"][-1].append(self.cosine_similarity(self.gt, x1).cpu().numpy())
 
+    
+    
     def print_time(self):
         tot = 0
         for t in self.measures["time"]:
