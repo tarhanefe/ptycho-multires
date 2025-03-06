@@ -46,6 +46,7 @@ class MultiResSolver():
                               + str(np.round(self.measures["mse"][-1][-1], 7))+ ", " \
                               + str(np.round(self.measures["rel_loss"][-1][-1], 7)) + ", " \
                               + str(self.LR) + "] "
+                              
         self.gt = torch.tensor(gt).double().to(self.loss.F.device)
 
 
