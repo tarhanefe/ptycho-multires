@@ -21,7 +21,7 @@ class HTV(MultiRes):
         Calculates the convolution of the input x with the filters f1, f2, f3 that are 
         being used for the calculation of the hessian.
         '''
-        Lx1 = cmpx_conv2d(cmpx_pad(x, (1, 2, 1, 2)), reg.f1)
+        Lx1 = cmpx_conv2d(cmpx_pad(x, (0, 1, 0, 1)), reg.f1)
 
         return Lx1
 
@@ -33,7 +33,7 @@ class HTV(MultiRes):
         
         Calculates the multiplication with the adjoint of the hessian matrix L.
         '''
-        Lt1y = cmpx_conv_transpose2d(y[:, 0:1, :, :], reg.f1)[:, :, 1:-2, 1:-2]
+        Lt1y = cmpx_conv_transpose2d(y[:, :, :, :], reg.f1)[:, :, :-1, :-1]
 
         return Lt1y
 
@@ -54,7 +54,7 @@ class HTV(MultiRes):
         '''
         Applies the the algorithm 3 which deals with the gradient of the HTV.
         '''
-        v_k = torch.zeros((1, 3,  2 ** reg.loc["s"] + 1, 2 ** reg.loc["s"] + 1), requires_grad=False, device=reg.device).double()
+        v_k = torch.zeros((1, 1,  2 ** reg.loc["s"], 2 ** reg.loc["s"]), requires_grad=False, device=reg.device).double()
         u_k = v_k.clone().detach()
 
         n, t_k, ukp1 = 0, 1, None
