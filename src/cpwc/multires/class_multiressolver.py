@@ -13,24 +13,27 @@ from src.cpwc.tools.utils import *
 
 class MultiResSolver():
 
-    def __init__(self, multires, loss, I_in=None, I_out=None, tol=None, cycle=None, tol_in=None,LR = None,l1_type = 'l1_row',d0 = False,gt = None):            
+    def __init__(self, multires, loss, I_in=None, I_out=None, tol=None, cycle=None, tol_in=None,LR = None,l1_type = 'l1_row',gt = None):            
         
         self.l1_type = l1_type
         self.multires = multires
-        self.d0 = d0
+        self.gt = gt
         self.loss = loss
 
         self.LR = LR
         self.lr_list = []
         self.cycle = {"cycle": cycle, "I_in": I_in, "I_out": I_out, "tol": tol, "tol_in": tol_in}
 
-        self.measures = {"loss": [], "mse": [], "reg": [], "rel_loss": [], "iters": [], "time": [], "csim": [],"psnr":[],"gt_mse":[]}
-        #self.measures = {"loss": [],
-        #                "mse": [], 
-        #                 "rel_loss": [], 
-        #                 "iters": [], 
-        #                 "time": [],
-        #                 "csim": []}
+        self.measures = {"loss": [], 
+                         "mse": [], 
+                         "reg": [], 
+                         "rel_loss": [], 
+                         "iters": [], 
+                         "time": [], 
+                         "csim": [],
+                         "psnr":[],
+                         "gt_mse":[]}
+
         self.loc = {"grid": 0,
                     "d_k": None}
 
@@ -42,92 +45,68 @@ class MultiResSolver():
 
 
         self.infos = lambda:  'Iter ' + str(self.measures["iters"][-1][-1]) + \
-                              ', [loss,frc,csm,gt_mse,psnr,mse, reg, rel_loss, LR] : [' \
+                              ', [loss,mse,reg,csim] : [' \
                               + str(np.round(self.measures["loss"][-1][-1], 7)) + ", " \
-                              + str(np.round(self.measures["csim"][-1][-1], 7)) + ", " \
-                              + str(np.round(self.measures["gt_mse"][-1][-1], 7)) + ", " \
-                              + str(np.round(self.measures["psnr"][-1][-1], 7)) + ", " \
                               + str(np.round(self.measures["mse"][-1][-1], 7))+ ", " \
                               + str(np.round(self.measures["reg"][-1][-1], 7)) + ", " \
-                              + str(np.round(self.measures["rel_loss"][-1][-1], 7)) + ", " \
-                              + str(self.LR) + "] "
+                              + str(np.round(self.measures["csim"][-1][-1], 7)) + ", " \
+                              + "] "
+#                              + str(np.round(self.measures["gt_mse"][-1][-1], 7)) + ", " \
+#                              + str(np.round(self.measures["psnr"][-1][-1], 7)) + ", " \
+#                              + str(np.round(self.measures["rel_loss"][-1][-1], 7)) + ", " \
+#                              + str(self.LR) + "] "
                               
-        self.gt = torch.tensor(gt).double().to(self.loss.F.device)
+    #    self.gt = torch.tensor(gt).double().to(self.loss.F.device)
 
 
-    def cosine_similarity(self, gt, recon):
-        gt = self.gt  # Ensure ground truth is set
+    def csim(self, gt, recon):
+        gt = self.gt  
         rec = recon.clone()
         m = torch.ones(2, 2, dtype=rec.dtype, device=self.multires.device)
-        
-        max_scale = int(np.log2(gt.shape[-1]))
+        max_scale = self.loss.F.linOperator.max_scale
         current_scale = self.multires.loc["s"]
-        
-        for i in range(max_scale - current_scale):
+        for _ in range(max_scale - current_scale):
             rec = torch.kron(rec, m)
-        
         dot_product = torch.sum(gt * rec.conj())  
         norm_gt = torch.norm(gt)
         norm_rec = torch.norm(rec)
-
         return torch.abs(dot_product) / (norm_gt * norm_rec)
-    
-    def get_ring_average(self,ground_truth, estimate, delta_radius=1):
-        estimate  = estimate.clone()
-        ground_truth = self.gt
-        size = ground_truth.shape[-1]
-        center = size//2
-        
-        x = torch.linspace(0, size, size)
-        xx, yy = torch.meshgrid(x, x, indexing="ij") 
-        r2 = ((xx-center)**2 + (yy-center)**2)
 
-        ring_average = torch.empty(center)
-        for radius in range(center):
-            mask = (r2 >= radius**2) * (r2 < (radius+delta_radius)**2)
-            vec1 = ground_truth[mask].flatten()
-            vec2 = estimate[mask].flatten()
-            ring_average[radius] = torch.dot(vec1, vec2) / (torch.norm(vec1) * torch.norm(vec2))
-        return ring_average
-
-    def psnr(self, gt, recon):
-        gt = self.gt
-        rec = recon.clone()
-        m = torch.ones(2, 2, dtype=rec.dtype, device=self.multires.device)
-        max_scale = int(np.log2(gt.shape[-1]))
-        current_scale = self.multires.loc["s"]
-        
-        for _ in range(max_scale - current_scale):
-            rec = torch.kron(rec, m)
-        mse = torch.mean(torch.abs(gt - rec) ** 2)
-        if mse == 0:
-            return float('inf')
-        return - 10 * torch.log10(mse)
+#    def psnr(self, gt, recon):
+#        gt = self.gt
+#        rec = recon.clone()
+#        m = torch.ones(2, 2, dtype=rec.dtype, device=self.multires.device)
+#        max_scale = int(np.log2(gt.shape[-1]))
+#        current_scale = self.multires.loc["s"]
+#        
+#        for _ in range(max_scale - current_scale):
+#            rec = torch.kron(rec, m)
+#        mse = torch.mean(torch.abs(gt - rec) ** 2)
+#        if mse == 0:
+#            return float('inf')
+#        return - 10 * torch.log10(mse)
     
-    def gt_mse(self, gt, recon):
-        gt = self.gt
-        rec = recon.clone()
-        m = torch.ones(2, 2, dtype=rec.dtype, device=self.multires.device)
-        max_scale = int(np.log2(gt.shape[-1]))
-        current_scale = self.multires.loc["s"]
-        for _ in range(max_scale - current_scale):
-            rec = torch.kron(rec, m)
-        return torch.mean(torch.abs(gt - rec) ** 2)
+#    def gt_mse(self, gt, recon):
+#        gt = self.gt
+#        rec = recon.clone()
+#        m = torch.ones(2, 2, dtype=rec.dtype, device=self.multires.device)
+#        max_scale = int(np.log2(gt.shape[-1]))
+#        current_scale = self.multires.loc["s"]
+#        for _ in range(max_scale - current_scale):
+#            rec = torch.kron(rec, m)
+#        return torch.mean(torch.abs(gt - rec) ** 2)
     
     
     def up_measures(self, x1=None, x2=None):
-
-        #time does not need an init or a particular update because it is not a list of list
-
         if x1 is None:
             self.measures["iters"].append([])
             self.measures["loss"].append([])
             self.measures["mse"].append([])
             self.measures["reg"].append([])
-            self.measures["rel_loss"].append([])
+            #self.measures["rel_loss"].append([])
             self.measures["csim"].append([])
-            self.measures["psnr"].append([])
-            self.measures["gt_mse"].append([])
+            #self.measures["psnr"].append([])
+            #self.measures["gt_mse"].append([])
 
         else:
             try:
@@ -135,13 +114,13 @@ class MultiResSolver():
             except:
                 self.measures["iters"][-1].append(0)
             self.measures["loss"][-1].append(self.loss.calc_loss(x1, l1_type= self.l1_type))
-            self.measures["loss"][-1].append(self.loss.calc_loss(x1))
+            #self.measures["loss"][-1].append(self.loss.calc_loss(x1))
             self.measures["mse"][-1].append(self.loss.calc_mse(x1))
             self.measures["reg"][-1].append(self.loss.calc_reg(x1,l1_type= self.l1_type))
-            self.measures["rel_loss"][-1].append(calc_error(x2, x1, norm1=self.loss.calc_loss))
-            self.measures["csim"][-1].append(self.cosine_similarity(self.gt, x1).cpu().numpy())
-            self.measures["psnr"][-1].append(self.psnr(self.gt, x1).cpu().numpy())
-            self.measures["gt_mse"][-1].append(self.gt_mse(self.gt, x1).cpu().numpy())
+            #self.measures["rel_loss"][-1].append(calc_error(x2, x1, norm1=self.loss.calc_loss))
+            self.measures["csim"][-1].append(self.csim(self.gt, x1).cpu().numpy())
+            #self.measures["psnr"][-1].append(self.psnr(self.gt, x1).cpu().numpy())
+            #self.measures["gt_mse"][-1].append(self.gt_mse(self.gt, x1).cpu().numpy())
     
     
     def print_time(self):
@@ -154,7 +133,6 @@ class MultiResSolver():
     
     def calc_grad(self,x):
         Grad = self.loss.F.Ht((self.loss.F.H(x)/(torch.abs(self.loss.F.H(x))+1e-8))*(torch.sqrt(self.loss.F.H_power(x)) - torch.sqrt(self.loss.y)))
-        #Grad = self.loss.F.Ht(self.loss.F.H(x)*(self.loss.F.H_power(x) - self.loss.y)) ! OLD METHOD 
         return Grad
 
     def solve_scale(self):
@@ -192,11 +170,7 @@ class MultiResSolver():
             self.loc["grid"] = grid
             N = size **2 
             std = np.sqrt(2/N)
-            if self.d0 is False:
-                d0 = torch.randn((1, 1, size ,size)).double().to(F.device) * std
-            else: 
-                d0 = self.d0
-            self.loc['d_k'] = d0
+            self.loc['d_k'] = torch.randn((1, 1, size ,size)).double().to(F.device) * std 
             if self.cycle["cycle"][grid] == 0 and type(self.sols[s - 1]) == torch.Tensor:
                 self.loc["d_k"] = self.sols[s - 1]
             #goes on a finer scale
