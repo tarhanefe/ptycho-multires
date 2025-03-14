@@ -61,8 +61,8 @@ class Ptychography(PhaseRetrievalBase):
         return probe.to(self.device)
 
     def renormalize_probe(self):
-        self.overlap_img = get_overlap_img(probe=self.probe, shifts=self.shifts, n_dim=2)
-        mean_val = torch.sqrt(torch.mean(self.overlap_img))
+        overlap_img = get_overlap_img(probe=self.probe, shifts=self.shifts, n_dim=2)
+        mean_val = torch.sqrt(torch.mean(overlap_img))
         self.probe = self.probe / mean_val
 
     def apply(self, x):
@@ -90,7 +90,6 @@ class Ptychography(PhaseRetrievalBase):
         x = super().apply_linop(x)
         if self.scale == self.max_scale:
             x = LinOpFFTShift2D().apply(x)
-        self.nocopyx = x 
         x = self.copy(x,self.n_copies)
         x = x * self.multipliers 
         return x
@@ -117,9 +116,7 @@ class Ptychography(PhaseRetrievalBase):
         self.initialized = False
 
     def copy(self,base_matrix, n):
-        self.base_matrix = base_matrix # !Sanity Check
         shared_matrix = base_matrix.repeat(1, 1, n, n)
-        self.shared_matrix = shared_matrix # !Sanity Check
         return shared_matrix
 
     def copyT(self,images: torch.Tensor, patch_size: int) -> torch.Tensor:
@@ -128,5 +125,4 @@ class Ptychography(PhaseRetrievalBase):
         grid_size = n // patch_size  
         patches = images.reshape(1, batch_size, grid_size, patch_size, grid_size, patch_size)
         patches = patches.sum(dim=(2, 4))
-
         return patches
