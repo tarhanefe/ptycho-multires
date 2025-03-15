@@ -2,6 +2,8 @@ import numpy as np
 import torch 
 
 def get_ring_average(ground_truth, estimate, delta_radius=1):
+    ground_truth = torch.fft.fftshift(torch.fft.fft2(ground_truth))
+    estimate = torch.fft.fftshift(torch.fft.fft2(estimate))
     size = ground_truth.shape[0]
     center = size//2
     
