@@ -39,6 +39,12 @@ def save_data(model,image_path,metrics,device = 'cuda',max_scale = 9,overlap = 7
             psnr = extract_data(model.measures["psnr"])
             np.save(file_name + "_psnr.npy", psnr)
         if i == "frc":
-            frc = get_ring_average(image_tensor_[0,0,:,:], model.c_k[0,0,:,:])
+            frc = get_ring_average(image_tensor_[0,0,:,:], model.c_k[0,0,:,:],delta_radius=5)
             np.save(file_name + "_frc.npy", frc)
     return file_name
+
+def calc_frc_x(delta_radius):
+    fourier_k_range = np.fft.fftfreq(512) / 0.25
+    fourier_k_range = fourier_k_range[0:256] * 10 
+    fourier_k_range = fourier_k_range[1::delta_radius]
+    return fourier_k_range

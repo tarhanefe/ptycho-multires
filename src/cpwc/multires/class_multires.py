@@ -9,6 +9,7 @@ class MultiRes():
     device = "cuda"
     S = None
     size = None
+    
 
     loc = {"s": 0,
            "S-s": None,

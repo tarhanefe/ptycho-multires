@@ -7,36 +7,44 @@ from src.cpwc.multires.class_multires import *
 class HTV(MultiRes):
 
     def __init__(reg):
-    
-        reg.f1 = 2 * torch.Tensor([[[[1., -1.,], [-1., 1.]]]]).double().to(reg.device)
-        reg.sigma_L = 8 #may not be suitable for the transpose
-
+        alpha = 1/3
+        reg.f1 = 1 * alpha * torch.Tensor([[[[1., -1.],
+                                                    [-1., 1.]]]]).double().to(reg.device)
+        reg.f2 = (1 - alpha) * torch.Tensor([[[[-1.],
+                                                    [1.]]]]).double().to(reg.device)
+        reg.f3 = (1 - alpha) * torch.Tensor([[[[1., -1.]]]]).double().to(reg.device)
+        reg.sigma_L = 8  # may not be suitable for the transpose
 
     def L(reg, x):
-        '''
-        Input: x // shape: (1, 1, width,height)// type: torch.float64
+        """
+        Input:  x  // shape: (1, 1, width, height) // type: torch.float64
+        Output: L  // shape: (1, 3, width+2, height+2) // type: torch.float64
 
-        Output: L // shape: (1, 3, width+2, height+2) // type: torch.float64
-
-        Calculates the convolution of the input x with the filters f1, f2, f3 that are 
-        being used for the calculation of the hessian.
-        '''
+        Calculates the convolution of the input x with the filters f1, f2, and f3.
+        """
+        # f1: pad (left, right, top, bottom) = (0, 1, 0, 1)
         Lx1 = cmpx_conv2d(cmpx_pad(x, (0, 1, 0, 1)), reg.f1)
-
-        return Lx1
+        # f2: pad (1, 1, 0, 1) to get horizontal sum=2 and vertical sum=1
+        Lx2 = cmpx_conv2d(cmpx_pad(x, (0, 0, 0, 1)), reg.f2)
+        # f3: pad (0, 1, 1, 1) to get horizontal sum=1 and vertical sum=2
+        Lx3 = cmpx_conv2d(cmpx_pad(x, (0, 1, 0, 0)), reg.f3)
+        return torch.cat((Lx1, Lx2, Lx3), dim=1)
 
     def Lt(reg, y):
-        '''
-        Input: y // shape: (1, 3, width+2, height+2) // type: torch.float64
+        """
+        Input:  y  // shape: (1, 3, width+2, height+2) // type: torch.float64
+        Output: Lt // shape: (1, 1, width, height) // type: torch.float64
 
-        Output: Lt // shape: (1, 1, width,height)// type: torch.float64
-        
-        Calculates the multiplication with the adjoint of the hessian matrix L.
-        '''
-        Lt1y = cmpx_conv_transpose2d(y[:, :, :, :], reg.f1)[:, :, :-1, :-1]
-
-        return Lt1y
-
+        Calculates the multiplication with the adjoint of the Hessian matrix L.
+        """
+        # For f1: crop 0 from top/left, 1 from bottom/right
+        Lt1y = cmpx_conv_transpose2d(y[:, 0:1, :, :], reg.f1)[:, :, :-1, :-1]
+        # For f2: crop 1 column from left and right, 1 row from bottom
+        Lt2y = cmpx_conv_transpose2d(y[:, 1:2, :, :], reg.f2)[:, :, :-1, :]
+        # For f3: crop 1 row from top and bottom, 1 column from right
+        Lt3y = cmpx_conv_transpose2d(y[:, 2:3, :, :], reg.f3)[:, :, :, :-1]
+        return Lt1y + Lt2y + Lt3y
+    
     def eval(reg, x,l1_type = 'l1_row'):
         '''
         Input: x // shape: (1, 1, width, height) // type: torch.float64
@@ -54,7 +62,7 @@ class HTV(MultiRes):
         '''
         Applies the the algorithm 3 which deals with the gradient of the HTV.
         '''
-        v_k = torch.zeros((1, 1,  2 ** reg.loc["s"], 2 ** reg.loc["s"]), requires_grad=False, device=reg.device).double()
+        v_k = torch.zeros((1, 3,  2 ** reg.loc["s"], 2 ** reg.loc["s"]), requires_grad=False, device=reg.device).double()
         u_k = v_k.clone().detach()
 
         n, t_k, ukp1 = 0, 1, None
