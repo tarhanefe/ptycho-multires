@@ -21,8 +21,9 @@ def get_ring_average(ground_truth, estimate, delta_radius=1):
 
 
 def F2fluxconverter(F):
-    pixel_area = 0.25^2 
-    
-    return F / pixel_area * sum_of_overlaps
+    pixel_area = 0.25**2 
+    sum_of_overlaps = 1.0
+    flux = F / pixel_area * sum_of_overlaps
+    return flux
 
 
