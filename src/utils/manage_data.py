@@ -18,10 +18,13 @@ def extract_data(nested_list):
             result.append(item)
     return result
 
-def save_data(model,image_path,metrics,device = 'cuda',max_scale = 9,overlap = 75,spline_type = "cpwc",lambda_ = 0.1,noise_type = "possion",noise = 0.1,loop = "mrgd"):
+def save_data(path,model,image_path,metrics,device = 'cuda',max_scale = 9,overlap = 75,spline_type = "cpwc",lr = 1e-2,lambda_ = 0.1,noise_type = "possion",noise = 0.1,loop = "mrgd"):
     image,image_tensor_ = get_image(image_path,max_scale = max_scale,device = device)
     mean_img = np.mean(image)
-    file_name = "data/{}_overlap{}_{}_lambda{}_noise_type{}_noise{}".format(spline_type,overlap,loop,lambda_,noise_type,noise)
+    if lr != None:
+        file_name = "{}/{}_overlap{}_{}_lambda{}_noise_type{}_noise{}_lr{}".format(path,spline_type,overlap,loop,lambda_,noise_type,noise,lr)
+    else: 
+        file_name = "{}/{}_overlap{}_{}_lambda{}_noise_type{}_noise{}".format(path,spline_type,overlap,loop,lambda_,noise_type,noise)
     for i in metrics:
         if i == "loss":
             loss_data = extract_data(model.measures["loss"])
