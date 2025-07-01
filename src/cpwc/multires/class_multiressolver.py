@@ -151,21 +151,8 @@ class MultiResSolver():
 #        return Grad
 
     def estimate_LR(self):
-        linop = self.loss.F.linOperator  # forward operator A
-        probe = linop.probe              # complex probe (assumed diag-mult)
-        y = self.loss.y                  # measurements (real, shape M)
-        #_, s, _ = torch.linalg.svd(probe, full_matrices=False)
-        #spectral_norm = s[0].item()
-        spectral_norm = torch.max(probe.abs()).item()  # max absolute value of probe
-        residual = 2 * self.Ax_pwr - y
-        #print("residual = ", residual.shape)
-        max_residual = float(residual.abs().max())
-        # 3. Lipschitz constant
-        L = 2.0 * spectral_norm * max_residual
-        #print("probe_spectral_norm =", spectral_norm)
-        #print("max_residual =", max_residual)
-        return 1.0 / L
-
+        L = calcLiepschitz(self.loss.F.linOperator, self.c_k, self.loss.y, num_iterations=50, tol=1e-6, device=self.loss.F.device)
+        return 2.0 / L
 
 
     def solve_scale(self):

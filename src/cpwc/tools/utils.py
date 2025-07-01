@@ -158,3 +158,54 @@ def scrapper(x):
     else: 
         return scrapper(x[0])
     
+
+
+# Calculate the largest eignevalue of the operator A which is linOperator.apply_linop using power iterations on cpu:
+# - Define a function to perform power iteration
+# Ax is applied as linOperator.apply_linop(x)
+# - Use a random vector x as the initial guess
+# - Repeat the process for a number of iterations to converge to the largest singular value
+# Do a stopping condition based on the change in the singular value estimate
+# - Calculate this on CPU
+# The operator is: R 1x1xNxN -> 1xRxMxM
+# Theregfore use A.T A x 
+
+def calcLiepschitz(linOperator, x, y, num_iterations=2000, tol=1e-6, device="cuda"):
+    # Power iteration for largest eigenvalue of A^H A
+    def power_iteration_ATA():
+        scale = 2 ** 9  # Assuming linOperator.scale is defined
+        v = torch.randn(1, 1, scale, scale, device=device)
+        v /= torch.norm(v)
+
+        for _ in range(num_iterations):
+            v_new = linOperator.apply_linop(v)
+            v_new = linOperator.apply_linopT(v_new)
+            v_new /= torch.norm(v_new)
+
+            if torch.norm(v_new - v) < tol:
+                break
+            v = v_new
+
+        Av = linOperator.apply_linop(v)
+        ATA_v = linOperator.apply_linopT(Av)
+        eigenvalue_est = torch.sum(v.conj() * ATA_v).real / torch.sum(v.conj() * v).real
+        return eigenvalue_est.item()
+
+    # Compute maximum diagonal scaling factor from Hessian formula
+    def max_hessian_diag_scaling():
+        with torch.no_grad():
+            Ax = linOperator.apply(x)
+            abs_Ax = torch.abs(Ax) + 1e-12
+            sqrt_y = torch.sqrt(y)
+
+            term1 = (sqrt_y - abs_Ax) / abs_Ax
+            scaling_diag = torch.abs(term1 * abs_Ax) + 1
+
+            return scaling_diag.max().item()
+
+    #largest_eig_AHA = power_iteration_ATA()
+    largest_eig_AHA = 2**(2*(9-linOperator.scale))
+    print(f"largest eigenvalue of A^H A: {largest_eig_AHA}")
+    max_diag_scale = max_hessian_diag_scaling()
+    approx_largest_hessian_eig = largest_eig_AHA * max_diag_scale
+    return approx_largest_hessian_eig
