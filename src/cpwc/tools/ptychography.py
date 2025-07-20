@@ -53,6 +53,22 @@ class Ptychography(PhaseRetrievalBase):
                 )
         return LinOpCat(parts)
 
+
+    def gen_psi(self) -> BaseLinOp:
+        op_probe  = LinOpMul(self.probe)
+        parts = []
+        for i in range(self.n_img):
+            roll = LinOpRoll2(*self.shifts[i])
+            if self.in_shape == self.probe.shape:
+                parts.append(op_probe @ roll)
+            else:
+                parts.append(
+                    op_probe @
+                    LinOpCrop2(self.in_shape, self.probe.shape) @
+                    roll
+                )
+        return LinOpCat(parts)
+
     def construct_probe(self, probe_radius=10):
         h, w = self.in_shape
         probe = torch.zeros((h, w), dtype=torch.complex64, device=self.device)

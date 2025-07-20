@@ -38,4 +38,10 @@ class Loss():
         the MSE and the regularization loss. 
         '''
         return self.calc_mse(x) + self.calc_reg(x,l1_type)
+    
+    def calc_improvement(self, x1, x2):
+        '''
+        Calculates the improvement of the loss function between two solutions.
+        '''
+        return (self.calc_loss(x1) - self.calc_loss(x2)) / self.calc_loss(x2) * 100.0
 

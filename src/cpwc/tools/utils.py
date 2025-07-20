@@ -197,15 +197,12 @@ def calcLiepschitz(linOperator, x, y, num_iterations=2000, tol=1e-6, device="cud
             Ax = linOperator.apply(x)
             abs_Ax = torch.abs(Ax) + 1e-12
             sqrt_y = torch.sqrt(y)
-
             term1 = (sqrt_y - abs_Ax) / abs_Ax
-            scaling_diag = torch.abs(term1 * abs_Ax) + 1
-
-            return scaling_diag.max().item()
+            scaling_diag = term1 * abs_Ax + 1
+            return scaling_diag.abs().max().item()
 
     #largest_eig_AHA = power_iteration_ATA()
     largest_eig_AHA = 2**(2*(9-linOperator.scale))
-    print(f"largest eigenvalue of A^H A: {largest_eig_AHA}")
     max_diag_scale = max_hessian_diag_scaling()
     approx_largest_hessian_eig = largest_eig_AHA * max_diag_scale
     return approx_largest_hessian_eig
